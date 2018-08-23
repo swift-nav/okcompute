@@ -1,0 +1,285 @@
+from okcompute import okc
+import pytest
+import pandas as pd
+
+DUMMY_DATAFRAME = pd.DataFrame({'in1': [1, 2, 3],
+                                'in2': [4, 5, 6],
+                                'in3': [7, 8, 9],
+                                'in4': [10, 11, 12]})
+
+IN1 = okc.Field(
+    ['input', 'data', 'in1'], 'Dummy input')
+IN2 = okc.Field(
+    ['input', 'data', 'in2'], 'Dummy input')
+IN3 = okc.Field(
+    ['input', 'data', 'in3'], 'Dummy input')
+IN4 = okc.Field(
+    ['input', 'data', 'in4'], 'Dummy input')
+IN5 = okc.Field(
+    ['input', 'data', 'in5'], 'Dummy input')
+IN_CONF = okc.Field(
+    ['input', 'config'], 'Dummy input')
+INT1 = okc.Field(
+    ['internal', 'int1'], 'Dummy internal field')
+INT2 = okc.Field(
+    ['internal', 'int2'], 'Dummy internal field')
+INT3 = okc.Field(
+    ['internal', 'int3'], 'Dummy internal field')
+OUT1 = okc.Field(
+    ['output', 'out1'], 'Dummy outout field')
+OUT2 = okc.Field(
+    ['output', 'out2'], 'Dummy outout field')
+OUT3 = okc.Field(
+    ['output', 'out3'], 'Dummy outout field')
+
+
+def test_subfield_missmatch():
+    with pytest.raises(AssertionError):
+        dummy_set = okc.App('dummy_set', '', '1.0')
+
+        @dummy_set.metric(
+            description='',
+            input_fields=[[IN1, IN_CONF]],
+            output_fields=[OUT1]
+        )
+        def test_subfield_missmatch(df):
+            return df
+
+    dummy_set = okc.App('dummy_set', '', '1.0')
+
+    @dummy_set.metric(
+        description='',
+        input_fields=[[IN1, IN2]],
+        output_fields=[OUT1]
+    )
+    def test_subfield_missmatch(df):
+        return df
+    input_data = {'input': {}, 'output': pd.DataFrame()}
+    input_data['input']['data'] = {'in1': [1, 2, 3],
+                                   'in2': [4, 5, 6]}
+    report = dummy_set.run(input_data)
+    assert len(report['existing_results_skipped']) == 0
+    assert len(report['unneeded_metrics']) == 0
+    assert len(report['metrics_missing_input']) == 0
+    assert report['run_results']['test_subfield_missmatch']['result'].strip().endswith(
+        "is not a DataFrame and can't return a column set")
+
+
+def test_mix():
+    dummy_set = okc.App('dummy_set', '', '1.0')
+    val = 'foo'
+
+    @dummy_set.metric(
+        description='',
+        input_fields=[[IN1, IN2], IN_CONF],
+        output_fields=[OUT1]
+    )
+    def test_mix(df, conf):
+        return pd.Series([conf + str(df.sum().sum())])
+
+    input_data = {'input': {}, 'output': pd.DataFrame()}
+    input_data['input']['data'] = DUMMY_DATAFRAME
+    input_data['input']['config'] = 'foo'
+    report = dummy_set.run(input_data)
+    assert len(report['existing_results_skipped']) == 0
+    assert len(report['unneeded_metrics']) == 0
+    assert len(report['metrics_missing_input']) == 0
+    assert report['run_results']['test_mix']['result'] == "Success"
+    test_sum = DUMMY_DATAFRAME[[IN1.key[-1], IN2.key[-1]]].sum().sum()
+    assert OUT1.get_by_path(input_data)[0] == val + str(test_sum)
+
+
+def test_missing_one():
+    dummy_set = okc.App('dummy_set', '', '1.0')
+
+    @dummy_set.metric(
+        description='',
+        input_fields=[[IN1, IN5]],
+        output_fields=[OUT1]
+    )
+    def test_missing_one(df):
+        return pd.Series([df.sum().sum()])
+
+    input_data = {'input': {}, 'output': pd.DataFrame()}
+    input_data['input']['data'] = DUMMY_DATAFRAME
+    report = dummy_set.run(input_data)
+    assert len(report['existing_results_skipped']) == 0
+    assert len(report['unneeded_metrics']) == len(
+        dummy_set.graph.get_metrics()) - 1
+    assert report['metrics_missing_input'] == {
+        'test_missing_one': {
+            'bad_field': 'input/data/in5',
+            'reason': 'Missing input',
+            'has_default': False
+        }
+    }
+    assert len(report['run_results']) == 0
+
+
+def test_defaults():
+    dummy_set = okc.App('dummy_set', '', '1.0')
+
+    @dummy_set.metric(
+        description='',
+        input_fields=[IN1, [IN2, IN3]],
+        output_fields=[OUT1]
+    )
+    def test_defaults(val, df=None):
+        sums = val.sum()
+        if df is not None:
+            sums += df.sum().sum()
+        return pd.Series([sums])
+
+    input_data = {'input': {}, 'output': pd.DataFrame()}
+    input_data['input']['data'] = DUMMY_DATAFRAME[[IN1.key[-1], IN2.key[-1]]]
+    report = dummy_set.run(input_data)
+    assert len(report['existing_results_skipped']) == 0
+    assert len(report['unneeded_metrics']) == 0
+    assert len(report['metrics_missing_input']) == 0
+    assert len(report['run_results']) == 1
+    assert report['run_results']['test_defaults']['result'] == "Success"
+    assert OUT1.get_by_path(input_data)[0] == 6
+    input_data['input']['data'] = DUMMY_DATAFRAME
+    report = dummy_set.run(input_data)
+    assert len(report['existing_results_skipped']) == 0
+    assert len(report['unneeded_metrics']) == 0
+    assert len(report['metrics_missing_input']) == 0
+    assert len(report['run_results']) == 1
+    assert report['run_results']['test_defaults']['result'] == "Success"
+    assert OUT1.get_by_path(input_data)[0] == 45
+
+
+class dummy_factory(object):
+    def __init__(self):
+        self.count = 0
+        self.app = okc.App('dummy_cascade_set', '', '1.0')
+        self.fail_node_list = []
+
+    def add_node(self, inputs, outputs, has_fallback=False):
+        assert len(
+            inputs) <= 10, 'Only supports generating node with less then 10 inputs'
+        self.count += 1
+        name = 'node' + str(self.count)
+
+        def func_base(df, valid_input):
+            if name in self.fail_node_list:
+                raise ValueError
+            if not valid_input:
+                val = 1000
+            else:
+                val = df.sum().sum()
+            return tuple(pd.Series(val * (i + 1)) for i in range(len(outputs)))
+
+        def func_no_default(df):
+            return func_base(df, True)
+
+        func = func_base
+        if not has_fallback:
+            func = func_no_default
+        setattr(func, '__name__', name)
+        self.app.add_metric(func, '', inputs, outputs)
+
+
+#      CASCADING GRAPH
+#  in1    in2    in3    in4
+#    \   / |        \    |
+#   node1 node2      node3
+#    /  \     |        |
+#  out1 int1 int2    int3
+#         \   / \    / \
+#        node4   node5 node6
+#          |      |     |
+#        out2    out3  int4
+
+
+@pytest.fixture(scope='module')
+def cascade_app_setup():
+    factory = dummy_factory()
+    factory.add_node([[IN1, IN2]], [OUT1, INT1])
+    factory.add_node([IN2], [INT2])
+    factory.add_node([[IN3, IN4]], [INT3], True)
+    factory.add_node([[INT1, INT2]], [OUT2])
+    factory.add_node([[INT2, INT3]], [OUT3])
+    return factory
+
+
+def test_cascade(cascade_app_setup): # pylint: disable=redefined-outer-name
+    input_data = {'input': {}, 'internal': pd.DataFrame(),
+                  'output': pd.DataFrame()}
+    app = cascade_app_setup.app
+    cascade_app_setup.fail_node_list.clear()
+    input_data['input']['data'] = DUMMY_DATAFRAME
+    report = app.run(input_data, desired_output_fields=[
+        OUT1, OUT2, OUT3])
+    assert len(report['existing_results_skipped']) == 0
+    assert len(report['unneeded_metrics']) == 0
+    assert len(report['metrics_missing_input']) == 0
+    assert len(report['run_results']) == 5
+    for node in [f'node{i}' for i in range(1, 6)]:
+        assert report['run_results'][node]['result'] == 'Success'
+    assert input_data['internal'].to_dict() == {'int3': {0: 57},
+                                                'int2': {0: 15},
+                                                'int1': {0: 42}
+                                                }
+    assert input_data['output'].to_dict() == {'out3': {0: 72},
+                                              'out2': {0: 57},
+                                              'out1': {0: 21}
+                                              }
+
+
+def test_cascade_error(cascade_app_setup): # pylint: disable=redefined-outer-name
+    input_data = {'input': {}, 'internal': pd.DataFrame(),
+                  'output': pd.DataFrame()}
+    app = cascade_app_setup.app
+    fail_nodes = cascade_app_setup.fail_node_list
+    fail_nodes.clear()
+    input_data['input']['data'] = DUMMY_DATAFRAME
+    fail_nodes.append('node1')
+    report = app.run(input_data, desired_output_fields=[
+        OUT1, OUT2, OUT3])
+    assert len(report['existing_results_skipped']) == 0
+    assert len(report['unneeded_metrics']) == 0
+    assert report['metrics_missing_input'] == {'node4':
+                                               {'bad_field': 'internal/int1',
+                                                'has_default': False,
+                                                'reason': 'Missing due to node1 failure'
+                                                }
+                                               }
+    assert len(report['run_results']) == 4
+    for node in [f'node{i}' for i in [2, 3, 5]]:
+        assert report['run_results'][node]['result'] == 'Success'
+    assert input_data['internal'].to_dict() == {'int3': {0: 57},
+                                                'int2': {0: 15}
+                                                }
+    assert input_data['output'].to_dict() == {'out3': {0: 72},
+                                              }
+
+
+def test_default_cascade(cascade_app_setup): # pylint: disable=redefined-outer-name
+    input_data = {'input': {}, 'internal': pd.DataFrame(),
+                  'output': pd.DataFrame()}
+    app = cascade_app_setup.app
+    cascade_app_setup.fail_node_list.clear()
+    input_data['input']['data'] = DUMMY_DATAFRAME[[
+        IN1.key[-1], IN2.key[-1], IN3.key[-1]]]
+    report = app.run(input_data, desired_output_fields=[
+        OUT1, OUT2, OUT3])
+    assert len(report['existing_results_skipped']) == 0
+    assert len(report['unneeded_metrics']) == 0
+    assert report['metrics_missing_input'] == {'node3':
+                                               {'bad_field': 'input/data/in4',
+                                                'has_default': True,
+                                                'reason': 'Missing input'
+                                                }
+                                               }
+    assert len(report['run_results']) == 5
+    for node in [f'node{i}' for i in range(1, 6)]:
+        assert report['run_results'][node]['result'] == 'Success'
+    assert input_data['internal'].to_dict() == {'int3': {0: 1000},
+                                                'int2': {0: 15},
+                                                'int1': {0: 42}
+                                                }
+    assert input_data['output'].to_dict() == {'out3': {0: 1015},
+                                              'out1': {0: 21},
+                                              'out2': {0: 57}
+                                              }
