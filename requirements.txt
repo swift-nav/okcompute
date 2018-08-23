@@ -1,0 +1,2 @@
+decorator==4.3.0          # via networkx
+networkx==2.1

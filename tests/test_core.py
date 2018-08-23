@@ -1,39 +1,39 @@
 
-from okcompute import okc
+from okcompute import Field, MetricSpec, App
 import pytest
 from functools import partial
 
 
-FIELD_INPUT_DUMMY1 = okc.Field(
+FIELD_INPUT_DUMMY1 = Field(
     ['input', 'dummy1'], 'Dummy input')
-FIELD_INPUT_DUMMY2 = okc.Field(
+FIELD_INPUT_DUMMY2 = Field(
     ['input', 'dummy2'], 'Dummy input')
-FIELD_INPUT_DUMMY3 = okc.Field(
+FIELD_INPUT_DUMMY3 = Field(
     ['input', 'dummy3'], 'Dummy input')
-FIELD_INPUT_DUMMY4 = okc.Field(
+FIELD_INPUT_DUMMY4 = Field(
     ['input', 'dummy4'], 'Dummy input')
-FIELD_INPUT_DUMMY_VALIDATION = okc.Field(
+FIELD_INPUT_DUMMY_VALIDATION = Field(
     ['input', 'dummy_validation'], 'Dummy input', lambda x: x['foo'] is not None)
 
-FIELD_RESULT_DUMMY_GOOD_NO_DEFAULT = okc.Field(
+FIELD_RESULT_DUMMY_GOOD_NO_DEFAULT = Field(
     ['output', 'dummy_good_no_default'], 'Dummy analysis result')
-FIELD_RESULT_DUMMY_GOOD_FALLBACK = okc.Field(
+FIELD_RESULT_DUMMY_GOOD_FALLBACK = Field(
     ['output', 'dummy_good_fallback'], 'Dummy analysis result')
-FIELD_RESULT_DUMMY_GOOD_DEFAULT = okc.Field(
+FIELD_RESULT_DUMMY_GOOD_DEFAULT = Field(
     ['output', 'dummy_good_default'], 'Dummy analysis result')
-FIELD_RESULT_DUMMY_VALIDATION = okc.Field(
+FIELD_RESULT_DUMMY_VALIDATION = Field(
     ['output', 'dummy_validation'], 'Dummy analysis result')
-FIELD_RESULT_DUMMY_BAD_OUT = okc.Field(
+FIELD_RESULT_DUMMY_BAD_OUT = Field(
     ['output', 'dummy_bad_out'], 'Dummy analysis result')
-FIELD_RESULT_DUMMY_BAD_OUT2 = okc.Field(
+FIELD_RESULT_DUMMY_BAD_OUT2 = Field(
     ['output', 'dummy_bad_out2'], 'Dummy analysis result')
-FIELD_RESULT_DUMMY_BAD_OUT3 = okc.Field(
+FIELD_RESULT_DUMMY_BAD_OUT3 = Field(
     ['output', 'dummy_bad_out3'], 'Dummy analysis result')
 
 FIELDS_DUMMY_OUTPUT = [item for item in globals(
 ).keys() if item.startswith("FIELD_RESULT_")]
 
-dummy_set = okc.App('dummy_set', '', '1.0')
+dummy_set = App('dummy_set', '', '1.0')
 
 
 @dummy_set.metric(
@@ -228,7 +228,7 @@ def test_validation_exception():
 
 
 def test_duplicate_metric():
-    dummy_set2 = okc.App('dummy_set', '', '1.0')
+    dummy_set2 = App('dummy_set', '', '1.0')
 
     @dummy_set2.metric(
         description='',
@@ -257,7 +257,7 @@ def test_duplicate_metric():
 
 
 def test_input_mismatch():
-    dummy_set2 = okc.App('dummy_set', '', '1.0')
+    dummy_set2 = App('dummy_set', '', '1.0')
     with pytest.raises(AssertionError):
         @dummy_set2.metric(
             description='',
@@ -288,7 +288,7 @@ def test_output_mismatch():
     def base_dummy(dummy):
         ret = 'foo'
         return tuple( ret for i in range(dummy) )
-    dummy_set2 = okc.App('dummy_set', '', '1.0')
+    dummy_set2 = App('dummy_set', '', '1.0')
     with pytest.raises(AssertionError):
         @dummy_set2.metric(
             description='',
@@ -328,31 +328,31 @@ def test_output_mismatch():
                 "Metric didn't produce expected number of outputs")
 
 
-IN1 = okc.Field(
+IN1 = Field(
     ['input', 'in1'], 'Dummy input')
-IN2 = okc.Field(
+IN2 = Field(
     ['input', 'in2'], 'Dummy input')
-IN3 = okc.Field(
+IN3 = Field(
     ['input', 'in3'], 'Dummy input')
-IN4 = okc.Field(
+IN4 = Field(
     ['input', 'in4'], 'Dummy input')
-INT1 = okc.Field(
+INT1 = Field(
     ['internal', 'int1'], 'Dummy internal field')
-INT2 = okc.Field(
+INT2 = Field(
     ['internal', 'int2'], 'Dummy internal field')
-INT3 = okc.Field(
+INT3 = Field(
     ['internal', 'int3'], 'Dummy internal field')
-OUT1 = okc.Field(
+OUT1 = Field(
     ['output', 'out1'], 'Dummy outout field')
-OUT2 = okc.Field(
+OUT2 = Field(
     ['output', 'out2'], 'Dummy outout field')
-OUT3 = okc.Field(
+OUT3 = Field(
     ['output', 'out3'], 'Dummy outout field')
 
 class dummy_factory(object):
     def __init__(self):
         self.count = 0
-        self.app = okc.App('dummy_cascade_set', '', '1.0')
+        self.app = App('dummy_cascade_set', '', '1.0')
         self.fail_node_list = []
 
     def add_node(self, inputs, outputs, has_fallback=False):

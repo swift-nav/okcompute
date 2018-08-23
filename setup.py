@@ -1,7 +1,8 @@
+import io
 from setuptools import setup, find_packages
 
 main_ns = {}
-exec(open('dash/version.py').read(), main_ns)  # pylint: disable=exec-used
+exec(open('okcompute/version.py').read(), main_ns)  # pylint: disable=exec-used
 
 setup(
     name='okcompute',
@@ -18,11 +19,11 @@ setup(
     ],
     tests_require=[
         'pytest',
-        'pandas'
-    ]
+        'pandas',
+    ],
     extras_require={
-        'plot': ['graphviz']
-        'doc': ['jinja2']
+        'plot': ['graphviz'],
+        'doc': ['graphviz', 'jinja2'],
     },
     classifiers=[
         'Programming Language :: Python',

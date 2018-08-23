@@ -1,4 +1,4 @@
-from okcompute import okc
+from okcompute import Field, MetricSpec, App
 import pytest
 import pandas as pd
 
@@ -7,35 +7,35 @@ DUMMY_DATAFRAME = pd.DataFrame({'in1': [1, 2, 3],
                                 'in3': [7, 8, 9],
                                 'in4': [10, 11, 12]})
 
-IN1 = okc.Field(
+IN1 = Field(
     ['input', 'data', 'in1'], 'Dummy input')
-IN2 = okc.Field(
+IN2 = Field(
     ['input', 'data', 'in2'], 'Dummy input')
-IN3 = okc.Field(
+IN3 = Field(
     ['input', 'data', 'in3'], 'Dummy input')
-IN4 = okc.Field(
+IN4 = Field(
     ['input', 'data', 'in4'], 'Dummy input')
-IN5 = okc.Field(
+IN5 = Field(
     ['input', 'data', 'in5'], 'Dummy input')
-IN_CONF = okc.Field(
+IN_CONF = Field(
     ['input', 'config'], 'Dummy input')
-INT1 = okc.Field(
+INT1 = Field(
     ['internal', 'int1'], 'Dummy internal field')
-INT2 = okc.Field(
+INT2 = Field(
     ['internal', 'int2'], 'Dummy internal field')
-INT3 = okc.Field(
+INT3 = Field(
     ['internal', 'int3'], 'Dummy internal field')
-OUT1 = okc.Field(
+OUT1 = Field(
     ['output', 'out1'], 'Dummy outout field')
-OUT2 = okc.Field(
+OUT2 = Field(
     ['output', 'out2'], 'Dummy outout field')
-OUT3 = okc.Field(
+OUT3 = Field(
     ['output', 'out3'], 'Dummy outout field')
 
 
 def test_subfield_missmatch():
     with pytest.raises(AssertionError):
-        dummy_set = okc.App('dummy_set', '', '1.0')
+        dummy_set = App('dummy_set', '', '1.0')
 
         @dummy_set.metric(
             description='',
@@ -45,7 +45,7 @@ def test_subfield_missmatch():
         def test_subfield_missmatch(df):
             return df
 
-    dummy_set = okc.App('dummy_set', '', '1.0')
+    dummy_set = App('dummy_set', '', '1.0')
 
     @dummy_set.metric(
         description='',
@@ -66,7 +66,7 @@ def test_subfield_missmatch():
 
 
 def test_mix():
-    dummy_set = okc.App('dummy_set', '', '1.0')
+    dummy_set = App('dummy_set', '', '1.0')
     val = 'foo'
 
     @dummy_set.metric(
@@ -90,7 +90,7 @@ def test_mix():
 
 
 def test_missing_one():
-    dummy_set = okc.App('dummy_set', '', '1.0')
+    dummy_set = App('dummy_set', '', '1.0')
 
     @dummy_set.metric(
         description='',
@@ -117,7 +117,7 @@ def test_missing_one():
 
 
 def test_defaults():
-    dummy_set = okc.App('dummy_set', '', '1.0')
+    dummy_set = App('dummy_set', '', '1.0')
 
     @dummy_set.metric(
         description='',
@@ -152,7 +152,7 @@ def test_defaults():
 class dummy_factory(object):
     def __init__(self):
         self.count = 0
-        self.app = okc.App('dummy_cascade_set', '', '1.0')
+        self.app = App('dummy_cascade_set', '', '1.0')
         self.fail_node_list = []
 
     def add_node(self, inputs, outputs, has_fallback=False):

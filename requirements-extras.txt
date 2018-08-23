@@ -1,0 +1,5 @@
+# plot
+graphviz==0.9
+# doc
+jinja2==2.10
+markupsafe==1.0      # via jinja2
