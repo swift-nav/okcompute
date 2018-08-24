@@ -33,7 +33,7 @@ def has_common(a, b):
     return bool(set(a) & set(b))
 
 
-class Field(NamedTuple):
+class Field:
     """A pointer to data involved with analysis.
 
     Fields are used by metrics to specify the inputs and outputs. They countain
@@ -50,9 +50,11 @@ class Field(NamedTuple):
         validate_func (Callable[[Any], bool]): A function for validating input
             data. "def DUMMY_VALIDATE(x): return True" by default.
     """
-    key: List[str]
-    description: str
-    validate_func: Callable[[Any], bool] = DUMMY_VALIDATE
+    def __init__(self, key: List[str], description: str,
+                 validate_func=DUMMY_VALIDATE):
+        self.key = key
+        self.description = description
+        self.validate_func = validate_func
 
     def key_to_str(self) -> str:
         """Return the str representation of the key.
@@ -101,7 +103,9 @@ class Field(NamedTuple):
         For example if:
 
         root = {'input':{'a':pandas.Dataframe({'foo':[],'bar':[],'bat':[]})}}
+
         fields = [Field(key=['input', 'a', 'foo']), Field(key=['input', 'a', 'bat'])]
+
         Then get_field_set would return root['input']['a'][['foo', 'bat']]
 
         Args:
@@ -401,21 +405,14 @@ class App:
     run command. This command returns a report of what happened during the
     processing and the data_map is updated with results.
 
+    Attributes:
+        name (str): The name of the analysis set.
+        description (str): A description for analysis set.
+        version (str): A version string for analysis set.
+
     """
 
     def __init__(self, name: str, description: str, version: str) -> None:
-        """Initialization function.
-
-        These attributes are logged in the report and documentation.
-
-        Args:
-            name (str): The name of the analysis set.
-            description (str): A description for analysis set.
-            version (str): A version string for analysis set.
-
-        Returns:
-            App: The initialized object
-        """
         self.name = name
         self.description = description
         self.version = version
@@ -494,12 +491,18 @@ class App:
         of the function. If multiple outputs are specified they are expected as
         a tuple with the same length as output_fields.
 
+        Raises:
+
+            AssertionError: If the call signature of the function doesn't match
+                the input_fields, or the field are in some way invalid, this
+                function will raise an assertion when the module is loaded.
+
         Args:
             input_fields (List[Field]): The input fields that map to the
                 function parameters. As a special case, if one of the items in
                 this list is a list itself, that set of fields is interpretted
                 as columns for a Pandas Dataframe. See
-                :func:`~okcompute.Field.get_field_set` for more details. 
+                :func:`~okcompute.Field.get_field_set` for more details.
 
             output_fields (List[Field]): The function return values will be
                 written to these fields
@@ -520,7 +523,12 @@ class App:
 
     def run(self, data_map, desired_output_fields=None, dry_run=False,
             skip_existing_results=False, save_graph_path=None, meta_args=''):
-        """Run the app's analysis using the data_map 
+        """Run the app's analysis using the data_map
+
+        Any exceptions raised during a metric's function are surpressed. The
+        tracebacks are logged in the report['run_results': {'result': str}].
+        An assertion will be logged in this result if a metric doesn't return
+        the number of results corrasponding to its output_fields.
 
         Args:
             data_map (dict): A dict that holds the inputs and outputs for
@@ -539,7 +547,7 @@ class App:
             skip_existing_results (bool): If all the outputs for a metric are
                 already preset in data_map, don't rerun the metric.
 
-            save_graph_path (str): A path to save an image of the graph of 
+            save_graph_path (str): A path to save an image of the graph of
                 analysis that runs based on the input. No graph is made if
                 this path is None.
 

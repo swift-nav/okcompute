@@ -5,12 +5,12 @@ Welcome to OKCompute
    :maxdepth: 2
    :caption: Contents:
 
-OKCompute is framework to make analysis stages clear, self documenting, and fault tolerant.
+OKCompute is framework to make analysis stages clear, self documenting, and
+fault tolerant.
 
 Get started with :ref:`installation`
-and then get an overview with the :ref:`quickstart`. There is also a
-more detailed :ref:`tutorial` that shows how to create an application with
-OKCompute. A full reference is in the :ref:`api` section.
+and then get an overview with the :ref:`quickstart`. A full reference is in the
+:ref:`api` section.
 
 Key Features
 ------------
