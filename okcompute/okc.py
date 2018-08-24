@@ -25,8 +25,6 @@ import time
 VALID_INPUT_PARAM = 'valid_input'
 
 FIELD_DIVIDER = '/'
-COL_DIVIDER = '+'
-
 
 def DUMMY_VALIDATE(x): return True  # pylint: disable=unused-argument
 
@@ -36,28 +34,46 @@ def has_common(a, b):
 
 
 class Field(NamedTuple):
-    """Form a complex number.
+    """A pointer to data involved with analysis.
 
-    Keyword arguments:
-    real -- the real part (default 0.0)
-    imag -- the imaginary part (default 0.0)
+    Fields are used by metrics to specify the inputs and outputs. They countain
+    a key, description, and optional validation.
+
+    The key ['a', 'b', 'c'] would refer to the value in root['a']['b']['c']
+    and is represented as "a/b/c".
+
+    Attributes:
+        key (List[str]): The hierarchal location of a data field.
+
+        description (str): Description of the field.
+
+        validate_func (Callable[[Any], bool]): A function for validating input
+            data. "def DUMMY_VALIDATE(x): return True" by default.
     """
     key: List[str]
     description: str
     validate_func: Callable[[Any], bool] = DUMMY_VALIDATE
 
     def key_to_str(self) -> str:
-        return FIELD_DIVIDER.join(self.key)
+        """Return the str representation of the key.
 
-    @staticmethod
-    def str_to_key(str_key):
-        return Field(str_key.split(FIELD_DIVIDER), '')
+        Returns:
+            str: str representation of key ie. "a/b/c"
+        """
+        return FIELD_DIVIDER.join(self.key)
 
     def __hash__(self):
         return hash(self.key_to_str())
 
     def path_exists(self, root):
-        """Try to access a nested object in root by item sequence."""
+        """Try to access a nested object in root by item sequence.
+
+        Args:
+            root (dict): The data_map field refers to.
+
+        Returns:
+            bool: True if value referenced by self.key exists, False otherwise.
+        """
         try:
             self.get_by_path(root)
             return True
@@ -65,11 +81,44 @@ class Field(NamedTuple):
             return False
 
     def get_by_path(self, root):
-        """Access a nested object in root by item sequence."""
+        """Access the nested object in root at self.key
+
+        Args:
+            root (dict): The data_map field refers to.
+
+        Returns:
+            object: The value at key.self
+
+        Raises:
+            KeyError: If the path for self.key isn't in root
+        """
         return reduce(operator.getitem, self.key, root)
 
     @staticmethod
     def get_field_set(root, fields):
+        """Access a Pandas Dataframe like object with mapping to the set of fields
+
+        For example if:
+        root = {'input': {'a': pandas.Dataframe({'foo': [], 'bar': [], 'bat': []})}}
+        fields = [Field(key=['input', 'a', 'foo']), Field(key=['input', 'a', 'bat'])]
+        Then get_field_set would return root['input']['a'][['foo', 'bat']]
+
+        Args:
+            root (dict): The data_map fields refers to.
+
+            fields (List[Field]): a list of fields that share a common path
+                except for the last string. These different strings refer to
+                columns in the the object at the common path.
+
+        Returns:
+            object: The referenced columns of the object at the common path
+
+        Raises:
+            KeyError: If the path for a key in fields isn't in root
+
+            TypeError: The object shared by the fields cannot take a
+                __getitem__ key that's a list of strings
+        """
         base_key = fields[0].key[:-1]
         entries = [field.key[-1] for field in fields]
         try:
@@ -79,7 +128,15 @@ class Field(NamedTuple):
                 f"object in {base_key} is not a DataFrame and can't return a column set")
 
     def set_by_path(self, root, value):
-        """Set a value in a nested object in root by item sequence."""
+        """Set a value in a nested object in root at self.key
+
+        Args:
+            root (dict): The data_map field refers to.
+            value (any): value to set the item to
+
+        Raises:
+            KeyError: If the path up to self.key isn't in root
+        """
         val = reduce(operator.getitem, self.key[:-1], root)
         val[self.key[-1]] = value
 
@@ -331,7 +388,33 @@ class Graph:
 
 
 class App:
+    """An app for performing a set of analyisis
+
+    The metrics for analysis are specified by adding the metric decorator of
+    an instance of this class to the anlysis functions.
+
+    Specifying these metrics builds a dependancy graph for the analysis to
+    perform. An image of this graph can be saved with save_graph.
+
+    The analysis can be run on a data_map for the input and output with the
+    run command. This command returns a report of what happened during the
+    processing and the data_map is updated with results.
+
+    """
+
     def __init__(self, name: str, description: str, version: str) -> None:
+        """Initialization function.
+
+        These attributes are logged in the report and documentation.
+
+        Args:
+            name (str): The name of the analysis set.
+            description (str): A description for analysis set.
+            version (str): A version string for analysis set.
+
+        Returns:
+            App: The initialized object
+        """
         self.name = name
         self.description = description
         self.version = version
@@ -367,6 +450,61 @@ class App:
         self.graph.add_node(spec)
 
     def metric(self, description, input_fields, output_fields):
+        """Decorator for adding metrics to app
+
+        The expected use is like:
+
+            @example_app.metric(
+                input_fields=[FIELD_INT2],
+                output_fields=[FIELD_OUT3],
+                description='example node4'
+            )
+            def metrics(in_arg, valid_input):
+                ...
+                return val
+
+        The call signature of the function being added is inspected and used
+        to inplicitly assess the desired behavior. Specifically the __name__
+        attribute and the parameters. This may make using lambas of additional
+        decorators more complicated.
+
+        Here is what is implicitly checked:
+        * The metric name - This is taken from the __name__ attribute. For a
+            function this is it's name
+
+        * The input parameters - the input_fields specified are matched in order
+            to the positional arguments of the function. An assertion is raised
+            if the number of parameters doesn't match the number of fields.
+
+        * Parameter default values - if a parameter specifies a default value,
+            the input field it corrasponds to is considered optional for this
+            metric. This means the metric will still run even if the field is
+            missing
+
+        * Special valid_input parameter - if a parameter with the name
+            valid_input is specified it is not mapped to the input fields. It
+            instead is set to True if the input fields are valid, or False if
+            they are not. Default parameters are considered valid. If a
+            valid_input parameter exists it is expected that the metric will
+            return some fallback output if valid_input is False.
+
+        Similar to the input_fields, the output_fields map to the return values
+        of the function. If multiple outputs are specified they are expected as
+        a tuple with the same length as output_fields.
+
+        Args:
+            input_fields (List[Field]): The input fields that map to the
+                function parameters
+
+            output_fields (List[Field]): The function return values will be
+                written to these fields
+
+            description (str): A description for metric.
+
+        Returns:
+            callable: The decorated function
+
+        """
         def deco(func):
             self.add_metric(func, description, input_fields, output_fields)
             return func

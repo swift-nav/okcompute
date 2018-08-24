@@ -24,13 +24,13 @@ installed using the `Pip Extras`_ feature.
 
 * `PyGraphviz`_ generates images based on dependancy graph
 * `Jinja2`_ used to generate documentation based on the OKCompute application
-* `MarkupSafe`_ Jinja2 dependancy
+* `Sphinx`_ documentation generation library
 
 .. _Pip Extras: https://packaging.python.org/tutorials/installing-packages/#installing-setuptools-extras
 .. _NetworkX: https://networkx.github.io/
 .. _PyGraphviz: http://pygraphviz.github.io/
 .. _Jinja2: http://jinja.pocoo.org/docs/
-.. _MarkupSafe: https://www.palletsprojects.com/p/markupsafe/
+.. _Sphinx: http://www.sphinx-doc.org/en/master/
 
 Virtual environments
 --------------------
@@ -104,8 +104,9 @@ To install the extras you can run one of the following commands:
 .. code-block:: sh
 
     pip install okcompute[doc]
+    pip install okcompute[appdoc]
     pip install okcompute[plot]
-    pip install okcompute[plot,doc]
+    pip install okcompute[plot,doc,appdoc]
 
 Specifying "doc" lets you generate documentation from your application, and
 "plot" is for generating images of the dependancy graphs
@@ -130,6 +131,7 @@ dependancies with:
     pip install -r requirements.txt
     pip install -r requirements-extras.txt
     pip install -r requirements-test.txt
+    pip install -r requirements-doc.txt
 
 and create an `Editable Install`_ with
 

@@ -30,3 +30,4 @@ Key Features
 
    installation
    quickstart
+   api

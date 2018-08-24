@@ -23,7 +23,8 @@ setup(
     ],
     extras_require={
         'plot': ['pygraphviz'],
-        'doc': ['pygraphviz', 'jinja2'],
+        'appdoc': ['pygraphviz', 'jinja2'],
+        'doc': ['sphinx'],
     },
     classifiers=[
         'Programming Language :: Python',

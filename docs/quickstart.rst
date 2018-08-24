@@ -7,7 +7,7 @@ This page walks you through the example application to get you started.  It
 assumes you already have OKCompute installed.  If you do not, head over to the
 :ref:`installation` section.
 
-The included example application gives a command line interface for testing
+The included example application "example/example_app.py" gives a command line interface for testing
 the basic okcompute functionality:
 
 .. autofunction:: example_app.main
