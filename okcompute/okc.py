@@ -99,7 +99,8 @@ class Field(NamedTuple):
         """Access a Pandas Dataframe like object with mapping to the set of fields
 
         For example if:
-        root = {'input': {'a': pandas.Dataframe({'foo': [], 'bar': [], 'bat': []})}}
+
+        root = {'input':{'a':pandas.Dataframe({'foo':[],'bar':[],'bat':[]})}}
         fields = [Field(key=['input', 'a', 'foo']), Field(key=['input', 'a', 'bat'])]
         Then get_field_set would return root['input']['a'][['foo', 'bat']]
 
