@@ -244,16 +244,16 @@ class Graph:
             default_metrics.update(child_default_metrics)
         return removed_metrics, default_metrics
 
-    def prune_inputs(self, input_data, invalid_input=None):
+    def prune_inputs(self, data_map, invalid_input=None):
         """Computes minimin graph required to compute targets from graph
         """
         desired_inputs = self.get_inputs()
         if invalid_input is None:
             invalid_input = {}
             for in_field in desired_inputs:
-                if in_field.path_exists(input_data):
+                if in_field.path_exists(data_map):
                     try:
-                        if not in_field.validate_func(in_field.get_by_path(input_data)):
+                        if not in_field.validate_func(in_field.get_by_path(data_map)):
                             invalid_input[in_field] = "Validation failed"
                     except Exception:  # pylint: disable=broad-except
                         invalid_input[in_field] = f"Validation exception: {traceback.format_exc()}"
@@ -274,7 +274,7 @@ class Graph:
                 gen_report(child_default_metrics, True))
         return metrics_missing_input
 
-    def prune_precalculated_metrics(self, input_data):
+    def prune_precalculated_metrics(self, data_map):
         """Computes minimin graph required to compute targets from graph
         """
         skipped_metrics = set()
@@ -284,7 +284,7 @@ class Graph:
                 continue
             satisfied = True
             for d in self.G.successors(node):
-                if not d.path_exists(input_data):
+                if not d.path_exists(data_map):
                     satisfied = False
                 else:
                     skipped_edges.add((node, d))
@@ -296,7 +296,7 @@ class Graph:
             self.G.remove_node(node)
         return skipped_metrics
 
-    def run(self, input_data):
+    def run(self, data_map):
         run_report = {}
         processed = []
         loop_needed = True
@@ -320,11 +320,11 @@ class Graph:
                             if isinstance(field, list):
                                 if not has_common(defaults, field):
                                     kwargs[arg_name] = Field.get_field_set(
-                                        input_data, field)
+                                        data_map, field)
                             else:
                                 if field not in defaults:
                                     kwargs[arg_name] = field.get_by_path(
-                                        input_data)
+                                        data_map)
                         if node.has_fallback_output:
                             kwargs[VALID_INPUT_PARAM] = True
                         retvals = node.func(**kwargs)
@@ -333,7 +333,7 @@ class Graph:
                     assert len(node.output_fields) == len(
                         retvals), "Metric didn't produce expected number of outputs"
                     for field, val in zip(node.output_fields, retvals):
-                        field.set_by_path(input_data, val)
+                        field.set_by_path(data_map, val)
                 except Exception:  # pylint: disable=broad-except
                     result = 'Failure: ' + traceback.format_exc()
                 stop_time = time.perf_counter()
@@ -348,10 +348,9 @@ class Graph:
                         field: f'Missing due to {node.name} failure' for field in self.G.successors(node)}
                     self.G.remove_node(node)
                     missing.update(self.prune_inputs(
-                        input_data, invalid_inputs))
+                        data_map, invalid_inputs))
                     break
         return run_report, missing
-
 
     def save_graph(self, out_file):
         def mapping(node):
@@ -359,9 +358,8 @@ class Graph:
                 return node.name
             if isinstance(node, Field):
                 return node.key_to_str()
-        A=nx.nx_agraph.to_agraph(nx.relabel_nodes(self.G,mapping))
+        A = nx.nx_agraph.to_agraph(nx.relabel_nodes(self.G, mapping))
         A.draw(out_file, format='jpg', prog='dot')
-
 
     def get_inputs(self):
         in_nodes = [node for node in self.G.nodes(
@@ -379,11 +377,13 @@ class Graph:
         return out_nodes
 
     def get_fields(self):
-        field_nodes = [node for node in self.G.nodes() if isinstance(node, Field)]
+        field_nodes = [node for node in self.G.nodes()
+                       if isinstance(node, Field)]
         return field_nodes
 
     def get_metrics(self):
-        metric_nodes = [node for node in self.G.nodes() if isinstance(node, MetricSpec)]
+        metric_nodes = [node for node in self.G.nodes()
+                        if isinstance(node, MetricSpec)]
         return metric_nodes
 
 
@@ -444,7 +444,8 @@ class App:
             if isinstance(field, list):
                 base_key = field[0].key[:-1]
                 for sub_field in field:
-                    assert sub_field.key[:-1] == base_key, f'All sub fields in {field} must have same base object'
+                    assert sub_field.key[:-
+                                         1] == base_key, f'All sub fields in {field} must have same base object'
         spec = MetricSpec(name, description, func, input_fields,
                           output_fields, has_fallback_output, optional_fields)
         self.graph.add_node(spec)
@@ -513,7 +514,53 @@ class App:
     def save_graph(self, file_path):
         self.graph.save_graph(file_path)
 
-    def run(self, input_data, desired_output_fields=None, dry_run=False, skip_existing_results=False, save_graph_path=None, meta_args=''):
+    def run(self, data_map, desired_output_fields=None, dry_run=False,
+            skip_existing_results=False, save_graph_path=None, meta_args=''):
+        """Run the app's analysis using the data_map 
+
+        Args:
+            data_map (dict): A dict that holds the inputs and outputs for
+                metrics. The available inputs should be populated along with a
+                dicts to countain internal and ouput fields
+
+            desired_output_fields (List[Field]): A subset of the desired output
+                fields. This will only run the metrics needed to produce these
+                outputs. If this is None the metrics won't be skipped based on
+                outputs.
+
+            dry_run (bool): If this is true, don't actually run the analysis.
+                Only produce a report checking the input for which metrics
+                would be skipped.
+
+            skip_existing_results (bool): If all the outputs for a metric are
+                already preset in data_map, don't rerun the metric.
+
+            save_graph_path (str): A path to save an image of the graph of 
+                analysis that runs based on the input. No graph is made if
+                this path is None.
+
+            meta_args (dict): Any additional values to add to the report.
+
+        Returns:
+            report (dict): A report of the analysis that was run. It countains
+                the following top level fields:
+
+                * meta_data - a description of the analysis and total run time
+
+                * existing_results_skipped - if skip_existing_results is True
+                    which metrics were skipped
+
+                * unneeded_metrics - if desired_output_fields were specified
+                    which metrics were skipped
+
+                * metrics_missing_input - which metrics expected input missing
+                    from data_map
+
+                * run_results - elapsed time for metric and result (Success or
+                    Failure along with cause)
+
+        """
+
         start_time = time.perf_counter()
         self.graph.clear_props()
         report = {
@@ -530,7 +577,7 @@ class App:
         graph = self.graph.copy()
         report['existing_results_skipped'] = []
         if skip_existing_results:
-            skipped_metrics = graph.prune_precalculated_metrics(input_data)
+            skipped_metrics = graph.prune_precalculated_metrics(data_map)
             report['existing_results_skipped'] = [
                 metric.name for metric in skipped_metrics]
         report['unneeded_metrics'] = []
@@ -538,10 +585,10 @@ class App:
             skipped_metrics = graph.prune_outputs(desired_output_fields)
             report['unneeded_metrics'] = [
                 metric.name for metric in skipped_metrics if type(metric) == MetricSpec]
-        unavailable_metrics = graph.prune_inputs(input_data)
+        unavailable_metrics = graph.prune_inputs(data_map)
         report['metrics_missing_input'] = unavailable_metrics
         if not dry_run:
-            report['run_results'], unavailable_metrics = graph.run(input_data)
+            report['run_results'], unavailable_metrics = graph.run(data_map)
             report['metrics_missing_input'].update(unavailable_metrics)
         stop_time = time.perf_counter()
         report['meta_data']['elapsed'] = stop_time - start_time

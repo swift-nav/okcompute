@@ -54,10 +54,10 @@ def test_subfield_missmatch():
     )
     def test_subfield_missmatch(df):
         return df
-    input_data = {'input': {}, 'output': pd.DataFrame()}
-    input_data['input']['data'] = {'in1': [1, 2, 3],
+    data_map = {'input': {}, 'output': pd.DataFrame()}
+    data_map['input']['data'] = {'in1': [1, 2, 3],
                                    'in2': [4, 5, 6]}
-    report = dummy_set.run(input_data)
+    report = dummy_set.run(data_map)
     assert len(report['existing_results_skipped']) == 0
     assert len(report['unneeded_metrics']) == 0
     assert len(report['metrics_missing_input']) == 0
@@ -77,16 +77,16 @@ def test_mix():
     def test_mix(df, conf):
         return pd.Series([conf + str(df.sum().sum())])
 
-    input_data = {'input': {}, 'output': pd.DataFrame()}
-    input_data['input']['data'] = DUMMY_DATAFRAME
-    input_data['input']['config'] = 'foo'
-    report = dummy_set.run(input_data)
+    data_map = {'input': {}, 'output': pd.DataFrame()}
+    data_map['input']['data'] = DUMMY_DATAFRAME
+    data_map['input']['config'] = 'foo'
+    report = dummy_set.run(data_map)
     assert len(report['existing_results_skipped']) == 0
     assert len(report['unneeded_metrics']) == 0
     assert len(report['metrics_missing_input']) == 0
     assert report['run_results']['test_mix']['result'] == "Success"
     test_sum = DUMMY_DATAFRAME[[IN1.key[-1], IN2.key[-1]]].sum().sum()
-    assert OUT1.get_by_path(input_data)[0] == val + str(test_sum)
+    assert OUT1.get_by_path(data_map)[0] == val + str(test_sum)
 
 
 def test_missing_one():
@@ -100,9 +100,9 @@ def test_missing_one():
     def test_missing_one(df):
         return pd.Series([df.sum().sum()])
 
-    input_data = {'input': {}, 'output': pd.DataFrame()}
-    input_data['input']['data'] = DUMMY_DATAFRAME
-    report = dummy_set.run(input_data)
+    data_map = {'input': {}, 'output': pd.DataFrame()}
+    data_map['input']['data'] = DUMMY_DATAFRAME
+    report = dummy_set.run(data_map)
     assert len(report['existing_results_skipped']) == 0
     assert len(report['unneeded_metrics']) == len(
         dummy_set.graph.get_metrics()) - 1
@@ -130,23 +130,23 @@ def test_defaults():
             sums += df.sum().sum()
         return pd.Series([sums])
 
-    input_data = {'input': {}, 'output': pd.DataFrame()}
-    input_data['input']['data'] = DUMMY_DATAFRAME[[IN1.key[-1], IN2.key[-1]]]
-    report = dummy_set.run(input_data)
+    data_map = {'input': {}, 'output': pd.DataFrame()}
+    data_map['input']['data'] = DUMMY_DATAFRAME[[IN1.key[-1], IN2.key[-1]]]
+    report = dummy_set.run(data_map)
     assert len(report['existing_results_skipped']) == 0
     assert len(report['unneeded_metrics']) == 0
     assert len(report['metrics_missing_input']) == 0
     assert len(report['run_results']) == 1
     assert report['run_results']['test_defaults']['result'] == "Success"
-    assert OUT1.get_by_path(input_data)[0] == 6
-    input_data['input']['data'] = DUMMY_DATAFRAME
-    report = dummy_set.run(input_data)
+    assert OUT1.get_by_path(data_map)[0] == 6
+    data_map['input']['data'] = DUMMY_DATAFRAME
+    report = dummy_set.run(data_map)
     assert len(report['existing_results_skipped']) == 0
     assert len(report['unneeded_metrics']) == 0
     assert len(report['metrics_missing_input']) == 0
     assert len(report['run_results']) == 1
     assert report['run_results']['test_defaults']['result'] == "Success"
-    assert OUT1.get_by_path(input_data)[0] == 45
+    assert OUT1.get_by_path(data_map)[0] == 45
 
 
 class dummy_factory(object):
@@ -204,12 +204,12 @@ def cascade_app_setup():
 
 
 def test_cascade(cascade_app_setup): # pylint: disable=redefined-outer-name
-    input_data = {'input': {}, 'internal': pd.DataFrame(),
+    data_map = {'input': {}, 'internal': pd.DataFrame(),
                   'output': pd.DataFrame()}
     app = cascade_app_setup.app
     cascade_app_setup.fail_node_list.clear()
-    input_data['input']['data'] = DUMMY_DATAFRAME
-    report = app.run(input_data, desired_output_fields=[
+    data_map['input']['data'] = DUMMY_DATAFRAME
+    report = app.run(data_map, desired_output_fields=[
         OUT1, OUT2, OUT3])
     assert len(report['existing_results_skipped']) == 0
     assert len(report['unneeded_metrics']) == 0
@@ -217,25 +217,25 @@ def test_cascade(cascade_app_setup): # pylint: disable=redefined-outer-name
     assert len(report['run_results']) == 5
     for node in [f'node{i}' for i in range(1, 6)]:
         assert report['run_results'][node]['result'] == 'Success'
-    assert input_data['internal'].to_dict() == {'int3': {0: 57},
+    assert data_map['internal'].to_dict() == {'int3': {0: 57},
                                                 'int2': {0: 15},
                                                 'int1': {0: 42}
                                                 }
-    assert input_data['output'].to_dict() == {'out3': {0: 72},
+    assert data_map['output'].to_dict() == {'out3': {0: 72},
                                               'out2': {0: 57},
                                               'out1': {0: 21}
                                               }
 
 
 def test_cascade_error(cascade_app_setup): # pylint: disable=redefined-outer-name
-    input_data = {'input': {}, 'internal': pd.DataFrame(),
+    data_map = {'input': {}, 'internal': pd.DataFrame(),
                   'output': pd.DataFrame()}
     app = cascade_app_setup.app
     fail_nodes = cascade_app_setup.fail_node_list
     fail_nodes.clear()
-    input_data['input']['data'] = DUMMY_DATAFRAME
+    data_map['input']['data'] = DUMMY_DATAFRAME
     fail_nodes.append('node1')
-    report = app.run(input_data, desired_output_fields=[
+    report = app.run(data_map, desired_output_fields=[
         OUT1, OUT2, OUT3])
     assert len(report['existing_results_skipped']) == 0
     assert len(report['unneeded_metrics']) == 0
@@ -248,21 +248,21 @@ def test_cascade_error(cascade_app_setup): # pylint: disable=redefined-outer-nam
     assert len(report['run_results']) == 4
     for node in [f'node{i}' for i in [2, 3, 5]]:
         assert report['run_results'][node]['result'] == 'Success'
-    assert input_data['internal'].to_dict() == {'int3': {0: 57},
+    assert data_map['internal'].to_dict() == {'int3': {0: 57},
                                                 'int2': {0: 15}
                                                 }
-    assert input_data['output'].to_dict() == {'out3': {0: 72},
+    assert data_map['output'].to_dict() == {'out3': {0: 72},
                                               }
 
 
 def test_default_cascade(cascade_app_setup): # pylint: disable=redefined-outer-name
-    input_data = {'input': {}, 'internal': pd.DataFrame(),
+    data_map = {'input': {}, 'internal': pd.DataFrame(),
                   'output': pd.DataFrame()}
     app = cascade_app_setup.app
     cascade_app_setup.fail_node_list.clear()
-    input_data['input']['data'] = DUMMY_DATAFRAME[[
+    data_map['input']['data'] = DUMMY_DATAFRAME[[
         IN1.key[-1], IN2.key[-1], IN3.key[-1]]]
-    report = app.run(input_data, desired_output_fields=[
+    report = app.run(data_map, desired_output_fields=[
         OUT1, OUT2, OUT3])
     assert len(report['existing_results_skipped']) == 0
     assert len(report['unneeded_metrics']) == 0
@@ -275,11 +275,11 @@ def test_default_cascade(cascade_app_setup): # pylint: disable=redefined-outer-n
     assert len(report['run_results']) == 5
     for node in [f'node{i}' for i in range(1, 6)]:
         assert report['run_results'][node]['result'] == 'Success'
-    assert input_data['internal'].to_dict() == {'int3': {0: 1000},
+    assert data_map['internal'].to_dict() == {'int3': {0: 1000},
                                                 'int2': {0: 15},
                                                 'int1': {0: 42}
                                                 }
-    assert input_data['output'].to_dict() == {'out3': {0: 1015},
+    assert data_map['output'].to_dict() == {'out3': {0: 1015},
                                               'out1': {0: 21},
                                               'out2': {0: 57}
                                               }

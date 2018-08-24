@@ -366,3 +366,76 @@ data_map:
             "out1": "node1_1[in1, in2]"
         }
     }
+
+Example5
+^^^^^^^^
+
+.. code-block:: sh
+
+    python example/example_app.py --in1 in1 --in2 in2 --fail-nodes node2 --save-graph test.png
+
+.. image:: _static/example5_graph.png
+    :alt: Analysis Dependancy Graph
+
+Report:
+
+.. code-block:: json
+
+    {
+        "existing_results_skipped": [],
+        "meta_data": {
+            "app_meta": {
+                "app_name": "example_app",
+                "app_version": "1.0"
+            },
+            "elapsed": 0.002555384999141097,
+            "meta_args": "",
+            "okcompute_ver": "1.0.0",
+            "run_time": "2018-08-24 00:30:48.780909"
+        },
+        "metrics_missing_input": {
+            "node3": {
+                "bad_field": "internal/int2",
+                "has_default": false,
+                "reason": "Missing due to node2 failure"
+            },
+            "node4": {
+                "bad_field": "internal/int2",
+                "has_default": true,
+                "reason": "Missing due to node2 failure"
+            }
+        },
+        "run_results": {
+            "node1": {
+                "elapsed": 9.70639957813546e-05,
+                "result": "Success"
+            },
+            "node2": {
+                "elapsed": 0.0006355730001814663,
+                "result": "Failure: Traceback (most recent call last):\n  File \"/home/axlan/src/okcompute/okcompute/okc.py\", line 331, in run\n    retvals = node.func(**kwargs)\n  File \"example/example_app.py\", line 75, in node2\n    raise AssertionError('Induced Failure')\nAssertionError: Induced Failure\n"
+            },
+            "node4": {
+                "elapsed": 1.833500573411584e-05,
+                "result": "Success"
+            }
+        },
+        "unneeded_metrics": []
+    }
+
+data_map:
+
+.. code-block:: json
+
+    {
+        "input": {
+            "in1": "in1",
+            "in2": "in2"
+        },
+        "internal": {
+            "int1": "node1_2[in1, in2]"
+        },
+        "output": {
+            "out1": "node1_1[in1, in2]",
+            "out3": "node4_1[fallback]"
+        }
+    }

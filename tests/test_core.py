@@ -93,10 +93,10 @@ def test_skip_all():
 
 
 def test_good_one():
-    input_data = {'input': {}, 'output': {}}
+    data_map = {'input': {}, 'output': {}}
     val = 'foo'
-    FIELD_INPUT_DUMMY1.set_by_path(input_data, val)
-    report = dummy_set.run(input_data, desired_output_fields=[
+    FIELD_INPUT_DUMMY1.set_by_path(data_map, val)
+    report = dummy_set.run(data_map, desired_output_fields=[
                            FIELD_RESULT_DUMMY_GOOD_NO_DEFAULT])
     assert len(report['existing_results_skipped']) == 0
     assert len(report['unneeded_metrics']) == len(
@@ -104,12 +104,12 @@ def test_good_one():
     assert len(report['metrics_missing_input']) == 0
     assert len(report['run_results']) == 1
     assert report['run_results']['dummy_good_no_default']['result'] == "Success"
-    assert FIELD_RESULT_DUMMY_GOOD_NO_DEFAULT.get_by_path(input_data) == val
+    assert FIELD_RESULT_DUMMY_GOOD_NO_DEFAULT.get_by_path(data_map) == val
 
 
 def test_fallback():
-    input_data = {'input': {}, 'output': {}}
-    report = dummy_set.run(input_data, desired_output_fields=[
+    data_map = {'input': {}, 'output': {}}
+    report = dummy_set.run(data_map, desired_output_fields=[
                            FIELD_RESULT_DUMMY_GOOD_FALLBACK])
     assert len(report['existing_results_skipped']) == 0
     assert len(report['unneeded_metrics']) == len(
@@ -118,10 +118,10 @@ def test_fallback():
         'bad_field': 'input/dummy1', 'has_default': True, 'reason': 'Missing input'}}
     assert len(report['run_results']) == 1
     assert report['run_results']['dummy_good_fallback']['result'] == "Success"
-    assert FIELD_RESULT_DUMMY_GOOD_FALLBACK.get_by_path(input_data) == 'bar'
+    assert FIELD_RESULT_DUMMY_GOOD_FALLBACK.get_by_path(data_map) == 'bar'
     val = 'foo'
-    FIELD_INPUT_DUMMY1.set_by_path(input_data, val)
-    report = dummy_set.run(input_data, desired_output_fields=[
+    FIELD_INPUT_DUMMY1.set_by_path(data_map, val)
+    report = dummy_set.run(data_map, desired_output_fields=[
                            FIELD_RESULT_DUMMY_GOOD_FALLBACK])
     assert len(report['existing_results_skipped']) == 0
     assert len(report['unneeded_metrics']) == len(
@@ -129,12 +129,12 @@ def test_fallback():
     assert len(report['metrics_missing_input']) == 0
     assert len(report['run_results']) == 1
     assert report['run_results']['dummy_good_fallback']['result'] == "Success"
-    assert FIELD_RESULT_DUMMY_GOOD_FALLBACK.get_by_path(input_data) == val
+    assert FIELD_RESULT_DUMMY_GOOD_FALLBACK.get_by_path(data_map) == val
 
 
 def test_missing_one():
-    input_data = {'input': {}, 'output': {}}
-    report = dummy_set.run(input_data, desired_output_fields=[
+    data_map = {'input': {}, 'output': {}}
+    report = dummy_set.run(data_map, desired_output_fields=[
                            FIELD_RESULT_DUMMY_GOOD_NO_DEFAULT])
     assert len(report['existing_results_skipped']) == 0
     assert len(report['unneeded_metrics']) == len(
@@ -152,8 +152,8 @@ def test_missing_one():
 def test_defaults():
     val1 = 'foo'
     val2 = 'bar'
-    input_data = {'input': {}, 'output': {}}
-    report = dummy_set.run(input_data, desired_output_fields=[FIELD_RESULT_DUMMY_GOOD_DEFAULT])
+    data_map = {'input': {}, 'output': {}}
+    report = dummy_set.run(data_map, desired_output_fields=[FIELD_RESULT_DUMMY_GOOD_DEFAULT])
     assert len(report['existing_results_skipped']) == 0
     assert len(report['unneeded_metrics']) == len(
       dummy_set.graph.get_metrics()) - 1
@@ -165,23 +165,23 @@ def test_defaults():
                                                   }
                                                }
     assert len(report['run_results']) == 0
-    FIELD_INPUT_DUMMY1.set_by_path(input_data, val1)
-    FIELD_INPUT_DUMMY2.set_by_path(input_data, val2)
-    report = dummy_set.run(input_data, desired_output_fields=[FIELD_RESULT_DUMMY_GOOD_DEFAULT])
+    FIELD_INPUT_DUMMY1.set_by_path(data_map, val1)
+    FIELD_INPUT_DUMMY2.set_by_path(data_map, val2)
+    report = dummy_set.run(data_map, desired_output_fields=[FIELD_RESULT_DUMMY_GOOD_DEFAULT])
     assert len(report['existing_results_skipped']) == 0
     assert len(report['unneeded_metrics']) == len(
         dummy_set.graph.get_metrics()) - 1
     assert len(report['metrics_missing_input']) == 0
     assert len(report['run_results']) == 1
     assert report['run_results']['dummy_good_default']['result'] == "Success"
-    assert FIELD_RESULT_DUMMY_GOOD_DEFAULT.get_by_path(input_data) == val1+val2
+    assert FIELD_RESULT_DUMMY_GOOD_DEFAULT.get_by_path(data_map) == val1+val2
 
 
 def test_validation_good():
-    input_data = {'input': {}, 'output': {}}
+    data_map = {'input': {}, 'output': {}}
     val = {'foo': 'bar'}
-    FIELD_INPUT_DUMMY_VALIDATION.set_by_path(input_data, val)
-    report = dummy_set.run(input_data, desired_output_fields=[
+    FIELD_INPUT_DUMMY_VALIDATION.set_by_path(data_map, val)
+    report = dummy_set.run(data_map, desired_output_fields=[
                            FIELD_RESULT_DUMMY_VALIDATION])
     assert len(report['existing_results_skipped']) == 0
     assert len(report['unneeded_metrics']) == len(
@@ -189,14 +189,14 @@ def test_validation_good():
     assert len(report['metrics_missing_input']) == 0
     assert len(report['run_results']) == 1
     assert report['run_results']['dummy_validation']['result'] == "Success"
-    assert FIELD_RESULT_DUMMY_VALIDATION.get_by_path(input_data) == val
+    assert FIELD_RESULT_DUMMY_VALIDATION.get_by_path(data_map) == val
 
 
 def test_validation_bad():
-    input_data = {'input': {}, 'output': {}}
+    data_map = {'input': {}, 'output': {}}
     val = {'foo': None}
-    FIELD_INPUT_DUMMY_VALIDATION.set_by_path(input_data, val)
-    report = dummy_set.run(input_data, desired_output_fields=[
+    FIELD_INPUT_DUMMY_VALIDATION.set_by_path(data_map, val)
+    report = dummy_set.run(data_map, desired_output_fields=[
                            FIELD_RESULT_DUMMY_VALIDATION])
     assert len(report['existing_results_skipped']) == 0
     assert len(report['unneeded_metrics']) == len(
@@ -213,10 +213,10 @@ def test_validation_bad():
 
 
 def test_validation_exception():
-    input_data = {'input': {}, 'output': {}}
+    data_map = {'input': {}, 'output': {}}
     val = {'bar': 'bar'}
-    FIELD_INPUT_DUMMY_VALIDATION.set_by_path(input_data, val)
-    report = dummy_set.run(input_data, desired_output_fields=[
+    FIELD_INPUT_DUMMY_VALIDATION.set_by_path(data_map, val)
+    report = dummy_set.run(data_map, desired_output_fields=[
                            FIELD_RESULT_DUMMY_VALIDATION])
     assert len(report['existing_results_skipped']) == 0
     assert len(report['unneeded_metrics']) == len(
@@ -312,10 +312,10 @@ def test_output_mismatch():
     def dummy_out2(dummy):
         return base_dummy(dummy)
 
-    input_data = {'input': {}, 'output': {}}
+    data_map = {'input': {}, 'output': {}}
     for out_count in range(4):
-        FIELD_INPUT_DUMMY1.set_by_path(input_data, out_count)
-        report = dummy_set2.run(input_data)
+        FIELD_INPUT_DUMMY1.set_by_path(data_map, out_count)
+        report = dummy_set2.run(data_map)
         assert len(report['existing_results_skipped']) == 0
         assert len(report['unneeded_metrics']) == 0
         assert len(report['metrics_missing_input']) == 0
@@ -402,14 +402,14 @@ def cascade_app_setup():
 
 
 def test_cascade(cascade_app_setup): # pylint: disable=redefined-outer-name
-    input_data = {'input': {}, 'internal':{}, 'output': {}}
+    data_map = {'input': {}, 'internal':{}, 'output': {}}
     app = cascade_app_setup.app
     cascade_app_setup.fail_node_list.clear()
-    IN1.set_by_path(input_data, 'a')
-    IN2.set_by_path(input_data, 'b')
-    IN3.set_by_path(input_data, 'c')
-    IN4.set_by_path(input_data, 'd')
-    report = app.run(input_data, desired_output_fields=[
+    IN1.set_by_path(data_map, 'a')
+    IN2.set_by_path(data_map, 'b')
+    IN3.set_by_path(data_map, 'c')
+    IN4.set_by_path(data_map, 'd')
+    report = app.run(data_map, desired_output_fields=[
         OUT1,OUT2,OUT3])
     assert len(report['existing_results_skipped']) == 0
     assert len(report['unneeded_metrics']) == 0
@@ -417,26 +417,26 @@ def test_cascade(cascade_app_setup): # pylint: disable=redefined-outer-name
     assert len(report['run_results']) == 5
     for node in [ f'node{i}' for i in range(1, 6)]:
         assert report['run_results'][node]['result'] == 'Success'
-    assert input_data['internal'] == {'int3': "node3[c, d]0",
+    assert data_map['internal'] == {'int3': "node3[c, d]0",
                                       'int2': "node2[b]0",
                                       'int1': "node1[a, b]1"
                                      }
-    assert input_data['output'] == {'out3': "node5[node2[b]0, node3[c, d]0]0",
+    assert data_map['output'] == {'out3': "node5[node2[b]0, node3[c, d]0]0",
                                     'out1': "node1[a, b]0",
                                     'out2': "node4[node1[a, b]1, node2[b]0]0"
                                    }
 
 
 def test_cascade_error(cascade_app_setup): # pylint: disable=redefined-outer-name
-    input_data = {'input': {}, 'internal':{}, 'output': {}}
+    data_map = {'input': {}, 'internal':{}, 'output': {}}
     app = cascade_app_setup.app
     fail_nodes = cascade_app_setup.fail_node_list
-    IN1.set_by_path(input_data, 'a')
-    IN2.set_by_path(input_data, 'b')
-    IN3.set_by_path(input_data, 'c')
-    IN4.set_by_path(input_data, 'd')
+    IN1.set_by_path(data_map, 'a')
+    IN2.set_by_path(data_map, 'b')
+    IN3.set_by_path(data_map, 'c')
+    IN4.set_by_path(data_map, 'd')
     fail_nodes.append('node1')
-    report = app.run(input_data, desired_output_fields=[
+    report = app.run(data_map, desired_output_fields=[
         OUT1,OUT2,OUT3])
     assert len(report['existing_results_skipped']) == 0
     assert len(report['unneeded_metrics']) == 0
@@ -449,20 +449,20 @@ def test_cascade_error(cascade_app_setup): # pylint: disable=redefined-outer-nam
     assert len(report['run_results']) == 4
     for node in [ f'node{i}' for i in [2,3,5] ]:
         assert report['run_results'][node]['result'] == 'Success'
-    assert input_data['internal'] == {'int3': "node3[c, d]0",
+    assert data_map['internal'] == {'int3': "node3[c, d]0",
                                       'int2': "node2[b]0"
                                      }
-    assert input_data['output'] == {'out3': "node5[node2[b]0, node3[c, d]0]0",
+    assert data_map['output'] == {'out3': "node5[node2[b]0, node3[c, d]0]0",
                                    }
 
 def test_default_cascade(cascade_app_setup): # pylint: disable=redefined-outer-name
-    input_data = {'input': {}, 'internal':{}, 'output': {}}
+    data_map = {'input': {}, 'internal':{}, 'output': {}}
     app = cascade_app_setup.app
     cascade_app_setup.fail_node_list.clear()
-    IN1.set_by_path(input_data, 'a')
-    IN2.set_by_path(input_data, 'b')
-    IN3.set_by_path(input_data, 'c')
-    report = app.run(input_data, desired_output_fields=[
+    IN1.set_by_path(data_map, 'a')
+    IN2.set_by_path(data_map, 'b')
+    IN3.set_by_path(data_map, 'c')
+    report = app.run(data_map, desired_output_fields=[
         OUT1,OUT2,OUT3])
     assert len(report['existing_results_skipped']) == 0
     assert len(report['unneeded_metrics']) == 0
@@ -475,11 +475,11 @@ def test_default_cascade(cascade_app_setup): # pylint: disable=redefined-outer-n
     assert len(report['run_results']) == 5
     for node in [ f'node{i}' for i in range(1, 6)]:
         assert report['run_results'][node]['result'] == 'Success'
-    assert input_data['internal'] == {'int3': "node3 default0",
+    assert data_map['internal'] == {'int3': "node3 default0",
                                       'int2': "node2[b]0",
                                       'int1': "node1[a, b]1"
                                      }
-    assert input_data['output'] == {'out3': "node5[node2[b]0, node3 default0]0",
+    assert data_map['output'] == {'out3': "node5[node2[b]0, node3 default0]0",
                                     'out1': "node1[a, b]0",
                                     'out2': "node4[node1[a, b]1, node2[b]0]0"
                                    }
