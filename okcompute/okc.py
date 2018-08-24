@@ -496,7 +496,10 @@ class App:
 
         Args:
             input_fields (List[Field]): The input fields that map to the
-                function parameters
+                function parameters. As a special case, if one of the items in
+                this list is a list itself, that set of fields is interpretted
+                as columns for a Pandas Dataframe. See
+                :func:`~okcompute.Field.get_field_set` for more details. 
 
             output_fields (List[Field]): The function return values will be
                 written to these fields

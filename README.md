@@ -1,6 +1,8 @@
 # OKCompute
 A framework to make analysis stages clear, self documenting, and fault tolerant.
 
+See [OKCompute Documentation](http://okcompute.swiftnav.com/) for details.
+
 ## Key Features
 
  * Graph of dependencies - Can figure out minimum analysis for set of outputs, or diagnose missing inputs
@@ -14,5 +16,3 @@ A framework to make analysis stages clear, self documenting, and fault tolerant.
 
 ## TODO
  * Make generated documentation prettier
- * Document framework
-
