@@ -90,7 +90,7 @@ On Windows:
 Your shell prompt will change to show the name of the activated environment.
 
 Install OKCompute
--------------
+-----------------
 
 Within the activated environment, use the following command to install
 OKCompute:
