@@ -1,5 +1,5 @@
 
-from okcompute import Field, MetricSpec, App
+from okcompute import Field, App
 import pytest
 from functools import partial
 

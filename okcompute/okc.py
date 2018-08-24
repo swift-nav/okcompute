@@ -36,6 +36,12 @@ def has_common(a, b):
 
 
 class Field(NamedTuple):
+    """Form a complex number.
+
+    Keyword arguments:
+    real -- the real part (default 0.0)
+    imag -- the imaginary part (default 0.0)
+    """
     key: List[str]
     description: str
     validate_func: Callable[[Any], bool] = DUMMY_VALIDATE
@@ -215,6 +221,7 @@ class Graph:
         """Computes minimin graph required to compute targets from graph
         """
         skipped_metrics = set()
+        skipped_edges = set()
         for node in self.G.nodes():
             if type(node) != MetricSpec:
                 continue
@@ -222,9 +229,12 @@ class Graph:
             for d in self.G.successors(node):
                 if not d.path_exists(input_data):
                     satisfied = False
-                    break
+                else:
+                    skipped_edges.add((node, d))
             if satisfied:
                 skipped_metrics.add(node)
+        for edge in skipped_edges:
+            self.G.remove_edge(*edge)
         for node in skipped_metrics:
             self.G.remove_node(node)
         return skipped_metrics

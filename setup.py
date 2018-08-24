@@ -22,8 +22,8 @@ setup(
         'pandas',
     ],
     extras_require={
-        'plot': ['graphviz'],
-        'doc': ['graphviz', 'jinja2'],
+        'plot': ['pygraphviz'],
+        'doc': ['pygraphviz', 'jinja2'],
     },
     classifiers=[
         'Programming Language :: Python',

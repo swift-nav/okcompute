@@ -1,4 +1,4 @@
-from okcompute import Field, MetricSpec, App
+from okcompute import Field, App
 import pytest
 import pandas as pd
 
