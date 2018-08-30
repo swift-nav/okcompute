@@ -9,7 +9,6 @@
 # WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
 
 from functools import reduce
-from typing import NamedTuple, List, Any, Callable
 import operator
 import sys
 import traceback
