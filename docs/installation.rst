@@ -6,8 +6,8 @@ Installation
 Python Version
 --------------
 
-We recommend using the latest version of Python 3. Python 2 is not currently
-supported
+This library has been tested with Python 2.7 and 3.6
+We recommend using the latest version of Python 3 or Python 2
 
 Dependencies
 ------------
