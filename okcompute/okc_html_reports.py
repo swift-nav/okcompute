@@ -8,7 +8,7 @@
 # EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
 
-from jinja2 import Template
+from jinja2 import Template  # pylint: disable=import-error
 import inspect
 from okcompute import okc
 
@@ -26,7 +26,7 @@ def generate_field_list(field_type, fields):
     </ul>'''
     validates = {}
     for field in fields:
-        if field.validate_func != okc.DUMMY_VALIDATE:
+        if field.validate_func != okc.DUMMY_VALIDATE:  # pylint: disable=comparison-with-callable
             try:
                 validates[field.key_to_str()] = inspect.getsource(field.validate_func)
             except TypeError:
