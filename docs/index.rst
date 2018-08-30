@@ -31,3 +31,4 @@ Key Features
    installation
    quickstart
    api
+   license
