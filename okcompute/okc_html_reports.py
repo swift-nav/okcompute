@@ -26,7 +26,7 @@ def generate_field_list(field_type, fields):
     </ul>'''
     validates = {}
     for field in fields:
-        if field.validate_func != okc.DUMMY_VALIDATE:  # pylint: disable=comparison-with-callable
+        if field.validate_func != okc.DUMMY_VALIDATE:  # pylint: disable=bad-option-value, comparison-with-callable
             try:
                 validates[field.key_to_str()] = inspect.getsource(field.validate_func)
             except TypeError:
