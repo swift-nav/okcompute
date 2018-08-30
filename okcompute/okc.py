@@ -468,6 +468,8 @@ class App:
 
         The expected use is like:
 
+        .. code-block:: py
+
             @example_app.metric(
                 input_fields=[FIELD_INT2],
                 output_fields=[FIELD_OUT3],
@@ -483,6 +485,7 @@ class App:
         decorators more complicated.
 
         Here is what is implicitly checked:
+
         * The metric name - This is taken from the __name__ attribute. For a
             function this is it's name
 
