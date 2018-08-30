@@ -72,7 +72,7 @@ def node1(in1, in2='default1'):
     """
     if 'node1' in nodes_to_fail:
         raise AssertionError('Induced Failure')
-    return f'node1_1[{in1}, {in2}]', f'node1_2[{in1}, {in2}]'
+    return 'node1_1[{}, {}]'.format(in1, in2), 'node1_2[{}, {}]'.format(in1, in2)
 
 
 @example_app.metric(
@@ -83,7 +83,7 @@ def node1(in1, in2='default1'):
 def node2(in2):
     if 'node2' in nodes_to_fail:
         raise AssertionError('Induced Failure')
-    return f'node2_1[{in2}]'
+    return 'node2_1[{}]'.format(in2)
 
 
 @example_app.metric(
@@ -94,7 +94,7 @@ def node2(in2):
 def node3(int1, int2):
     if 'node3' in nodes_to_fail:
         raise AssertionError('Induced Failure')
-    return f'node3_1[{int1}, {int2}]'
+    return 'node3_1[{}, {}]'.format(int1, int2)
 
 
 @example_app.metric(
@@ -112,9 +112,9 @@ def node4(int2, valid_input):
     if 'node4' in nodes_to_fail:
         raise AssertionError('Induced Failure')
     if valid_input:
-        ret = f'node4_1[{int2}]'
+        ret = 'node4_1[{}]'.format(int2)
     else:
-        ret = f'node4_1[fallback]'
+        ret = 'node4_1[fallback]'
     return ret
 
 
@@ -146,7 +146,7 @@ def main():
         nodes_to_fail.extend(args.fail_nodes)
     if args.specify_internal:
         for val in args.specify_internal:
-            internal[val] = f'{val}[Existing]'
+            internal[val] = '{}[Existing]'.format(val)
     if args.specify_outputs:
         desired_output_fields = []
         output_mapping = {

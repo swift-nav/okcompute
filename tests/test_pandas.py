@@ -51,7 +51,7 @@ def test_subfield_missmatch():
             description='',
             input_fields=[[IN1, IN_CONF]],
             output_fields=[OUT1]
-        )
+        ) # pylint: disable=unused-variable
         def test_subfield_missmatch1(df):
             return df
 
@@ -61,7 +61,7 @@ def test_subfield_missmatch():
         description='',
         input_fields=[[IN1, IN2]],
         output_fields=[OUT1]
-    )
+    ) # pylint: disable=unused-variable
     def test_subfield_missmatch(df):
         return df
     data_map = {'input': {}, 'output': pd.DataFrame()}

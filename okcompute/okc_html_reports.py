@@ -8,13 +8,13 @@
 # EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
 
-from jinja2 import Template
+from jinja2 import Template  # pylint: disable=import-error
 import inspect
 from okcompute import okc
 
 
-def generate_field_list(type, fields):
-    field_template = '''<h1>{{type}}</h1><a id="{{type}}"></a>
+def generate_field_list(field_type, fields):
+    field_template = '''<h1>{{field_type}}</h1><a id="{{field_type}}"></a>
     <ul>
         {% for field in fields %}
         <li><b>{{field.key_to_str()}}</b>: {{field.description}}<a id="{{field.key_to_str()}}"></a></li>
@@ -26,13 +26,13 @@ def generate_field_list(type, fields):
     </ul>'''
     validates = {}
     for field in fields:
-        if field.validate_func != okc.DUMMY_VALIDATE:
+        if field.validate_func != okc.DUMMY_VALIDATE:  # pylint: disable=bad-option-value, comparison-with-callable
             try:
                 validates[field.key_to_str()] = inspect.getsource(field.validate_func)
             except TypeError:
                 partial_func = field.validate_func
                 validates[field.key_to_str()] = str(partial_func.keywords) + '\n' + inspect.getsource(partial_func.func)
-    return Template(field_template).render(fields=fields, validates=validates, type=type)
+    return Template(field_template).render(fields=fields, validates=validates, field_type=field_type)
 
 
 def generate_metric_list(metrics):
@@ -103,8 +103,8 @@ def generate_app_doc(app, output_dir):
         'Internal': generate_field_list('Internal', app.graph.get_internal())
     }
     metrics = generate_metric_list(app.graph.get_metrics())
-    with open(f'{output_dir}{app.name}.html', 'w') as fd:
+    with open('{}{}.html'.format(output_dir, app.name), 'w') as fd:
         fd.write(Template(template).render(app_name=app.name,
                                             field_dict=field_dict,
                                             metrics=metrics))
-    app.save_graph(f'{output_dir}{app.name}.jpg')
+    app.save_graph('{}{}.jpg'.format(output_dir, app.name))

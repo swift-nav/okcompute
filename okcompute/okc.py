@@ -7,27 +7,32 @@
 # THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND,
 # EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
+"""
+    okcompute.okc
+    ~~~~~~~~~
 
-from functools import reduce
-from typing import NamedTuple, List, Any, Callable
+    This modeule implements the App and Field classes used to create test sets
+"""
+
+import okcompute
+
+import networkx as nx
+
 import operator
 import sys
 import traceback
 import datetime
 import time
-if (sys.version_info > (3, 0)):
-    from inspect import signature, Parameter
+if sys.version_info > (3, 0):
+    from inspect import signature, Parameter  # pylint: disable=no-name-in-module, import-error
+    from functools import reduce  # pylint: disable=redefined-builtin
 else:
-    from funcsigs import signature, Parameter
-
-import networkx as nx
-
-import okcompute
-
+    from funcsigs import signature, Parameter  # pylint: disable=no-name-in-module, import-error
 
 VALID_INPUT_PARAM = 'valid_input'
 
 FIELD_DIVIDER = '/'
+
 
 def DUMMY_VALIDATE(x): return True  # pylint: disable=unused-argument
 
@@ -53,6 +58,7 @@ class Field:
         validate_func (Callable[[Any], bool]): A function for validating input
             data. "def DUMMY_VALIDATE(x): return True" by default.
     """
+
     def __init__(self, key, description,
                  validate_func=DUMMY_VALIDATE):
         self.key = key
@@ -153,7 +159,8 @@ class Field:
 
 
 class MetricSpec:
-    def __init__(self, name, description, func, input_fields, output_fields, has_fallback_output=False, optional_fields=None):
+    def __init__(self, name, description, func, input_fields, output_fields,
+                 has_fallback_output=False, optional_fields=None):
         self.name = name
         self.description = description
         self.func = func
@@ -268,7 +275,8 @@ class Graph:
                         if not in_field.validate_func(in_field.get_by_path(data_map)):
                             invalid_input[in_field] = "Validation failed"
                     except Exception:  # pylint: disable=broad-except
-                        invalid_input[in_field] = "Validation exception: {}".format(traceback.format_exc())
+                        invalid_input[in_field] = "Validation exception: {}".format(
+                            traceback.format_exc())
                 else:
                     invalid_input[in_field] = "Missing input"
         metrics_missing_input = {}
@@ -322,7 +330,7 @@ class Graph:
                 result = 'Success'
                 try:
                     if not self.G.nodes[node]['use_input']:
-                        inputs = [None for arg in node.input_fields]
+                        inputs = [None] * len(node.input_fields)
                         retvals = node.func(*inputs, valid_input=False)
                     else:
                         kwargs = {}
