@@ -1,25 +1,28 @@
+# Copyright (C) 2018 Swift Navigation Inc.
+# Contact: Swift Navigation <dev@swiftnav.com>
+#
+# This source is subject to the license found in the file 'LICENSE' which must
+# be be distributed together with this source. All other rights reserved.
+#
+# THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND,
+# EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
+
 from functools import reduce
-from inspect import signature, Parameter
+from typing import NamedTuple, List, Any, Callable
 import operator
+import sys
+import traceback
+import datetime
+import time
+if (sys.version_info > (3, 0)):
+    from inspect import signature, Parameter
+else:
+    from funcsigs import signature, Parameter
 
 import networkx as nx
 
-from typing import NamedTuple, List, Any, Callable
-
-import traceback
-
 import okcompute
-import datetime
-import time
-
-# TODO: Better hashing of fields / metrics (avoid collisions based on string names)
-# TODO: Maybe add way of specifying a list fields with unknown name (thread names) with sub keys
-# TODO: Make helper functions to reduce boiler plate in saving / resuming from intermediary processing
-# TODO: Make reports returned by prune functions more consistent
-# TODO: Standardize config/input/output conventions
-# TODO: Should allow metric input/output be dicts?
-# TODO: Python2 support?
-# TODO: Function to generate input/metric descriptions
 
 
 VALID_INPUT_PARAM = 'valid_input'
@@ -50,13 +53,13 @@ class Field:
         validate_func (Callable[[Any], bool]): A function for validating input
             data. "def DUMMY_VALIDATE(x): return True" by default.
     """
-    def __init__(self, key: List[str], description: str,
+    def __init__(self, key, description,
                  validate_func=DUMMY_VALIDATE):
         self.key = key
         self.description = description
         self.validate_func = validate_func
 
-    def key_to_str(self) -> str:
+    def key_to_str(self):
         """Return the str representation of the key.
 
         Returns:
@@ -130,7 +133,7 @@ class Field:
             return reduce(operator.getitem, base_key, root)[entries]
         except TypeError:
             raise TypeError(
-                f"object in {base_key} is not a DataFrame and can't return a column set")
+                "object in {} is not a DataFrame and can't return a column set".format(base_key))
 
     def set_by_path(self, root, value):
         """Set a value in a nested object in root at self.key
@@ -149,14 +152,18 @@ class Field:
         return self.key_to_str() == other
 
 
-class MetricSpec(NamedTuple):
-    name: str
-    description: str
-    func: Callable
-    input_fields: List[Field]
-    output_fields: List[Field]
-    has_fallback_output: bool = False
-    optional_fields: List[Field] = []
+class MetricSpec:
+    def __init__(self, name, description, func, input_fields, output_fields, has_fallback_output=False, optional_fields=None):
+        self.name = name
+        self.description = description
+        self.func = func
+        self.input_fields = input_fields
+        self.output_fields = output_fields
+        self.has_fallback_output = has_fallback_output
+        if optional_fields is None:
+            self.optional_fields = []
+        else:
+            self.optional_fields = optional_fields
 
     def __hash__(self):
         return hash(self.name)
@@ -183,7 +190,7 @@ class Graph:
             self.G.nodes[node]['default_fields'] = []
 
     def add_node(self, spec):
-        assert not self.G.has_node(spec), f'Duplicate metric {spec}'
+        assert not self.G.has_node(spec), 'Duplicate metric {}'.format(spec)
         self.G.add_node(spec, color='green', use_input=True, default_fields=[])
 
         for input_field in spec.input_fields:
@@ -195,7 +202,7 @@ class Graph:
 
         for output_field in spec.output_fields:
             assert not self.G.has_node(
-                output_field), f'Duplicate output field {output_field}'
+                output_field), 'Duplicate output field {}'.format(output_field)
             self.G.add_node(output_field, color='turquoise')
             self.G.add_edge(spec, output_field)
 
@@ -231,11 +238,11 @@ class Graph:
         if not self.G.has_node(node):
             return removed_metrics, default_metrics
         children = [child for child in self.G.successors(node)]
-        if type(node) == MetricSpec:
+        if isinstance(node, MetricSpec):
             removed_metrics.add(node)
         self.G.remove_node(node)
         for child in children:
-            if type(child) == MetricSpec:
+            if isinstance(child, MetricSpec):
                 if node in child.optional_fields:
                     self.G.nodes[child]['default_fields'].append(node)
                     continue
@@ -261,7 +268,7 @@ class Graph:
                         if not in_field.validate_func(in_field.get_by_path(data_map)):
                             invalid_input[in_field] = "Validation failed"
                     except Exception:  # pylint: disable=broad-except
-                        invalid_input[in_field] = f"Validation exception: {traceback.format_exc()}"
+                        invalid_input[in_field] = "Validation exception: {}".format(traceback.format_exc())
                 else:
                     invalid_input[in_field] = "Missing input"
         metrics_missing_input = {}
@@ -285,7 +292,7 @@ class Graph:
         skipped_metrics = set()
         skipped_edges = set()
         for node in self.G.nodes():
-            if type(node) != MetricSpec:
+            if not isinstance(node, MetricSpec):
                 continue
             satisfied = True
             for d in self.G.successors(node):
@@ -309,9 +316,9 @@ class Graph:
         while loop_needed:
             loop_needed = False
             for node in nx.topological_sort(self.G):
-                if type(node) != MetricSpec or node in processed:
+                if not isinstance(node, MetricSpec) or node in processed:
                     continue
-                start_time = time.perf_counter()
+                start_time = time.clock()
                 result = 'Success'
                 try:
                     if not self.G.nodes[node]['use_input']:
@@ -341,7 +348,7 @@ class Graph:
                         field.set_by_path(data_map, val)
                 except Exception:  # pylint: disable=broad-except
                     result = 'Failure: ' + traceback.format_exc()
-                stop_time = time.perf_counter()
+                stop_time = time.clock()
                 run_report[node.name] = {
                     'elapsed': stop_time - start_time,
                     'result': result
@@ -350,7 +357,7 @@ class Graph:
                 if result != 'Success':
                     loop_needed = True
                     invalid_inputs = {
-                        field: f'Missing due to {node.name} failure' for field in self.G.successors(node)}
+                        field: 'Missing due to {} failure'.format(node.name) for field in self.G.successors(node)}
                     self.G.remove_node(node)
                     missing.update(self.prune_inputs(
                         data_map, invalid_inputs))
@@ -412,7 +419,7 @@ class App:
 
     """
 
-    def __init__(self, name: str, description: str, version: str) -> None:
+    def __init__(self, name, description, version):
         self.name = name
         self.description = description
         self.version = version
@@ -427,9 +434,9 @@ class App:
         if has_fallback_output:
             arg_count -= 1
         assert len(
-            output_fields) > 0, f"Metric output_fields must have at least one entry"
+            output_fields) > 0, "Metric output_fields must have at least one entry"
         assert arg_count == len(
-            input_fields), f"Metric input_fields count:{len(input_fields)} doesn't match function input count:{arg_count} (ignoring valid_input)"
+            input_fields), "Metric input_fields count:{} doesn't match function input count:{} (ignoring valid_input)".format(len(input_fields), arg_count)
         for i, param in enumerate(func_params.values()):
             if param.name == VALID_INPUT_PARAM:
                 continue
@@ -443,7 +450,7 @@ class App:
                 base_key = field[0].key[:-1]
                 for sub_field in field:
                     assert sub_field.key[:-
-                                         1] == base_key, f'All sub fields in {field} must have same base object'
+                                         1] == base_key, 'All sub fields in {} must have same base object'.format(field)
         spec = MetricSpec(name, description, func, input_fields,
                           output_fields, has_fallback_output, optional_fields)
         self.graph.add_node(spec)
@@ -573,7 +580,7 @@ class App:
 
         """
 
-        start_time = time.perf_counter()
+        start_time = time.clock()
         self.graph.clear_props()
         report = {
             'meta_data': {
@@ -596,13 +603,13 @@ class App:
         if desired_output_fields is not None:
             skipped_metrics = graph.prune_outputs(desired_output_fields)
             report['unneeded_metrics'] = [
-                metric.name for metric in skipped_metrics if type(metric) == MetricSpec]
+                metric.name for metric in skipped_metrics if isinstance(metric, MetricSpec)]
         unavailable_metrics = graph.prune_inputs(data_map)
         report['metrics_missing_input'] = unavailable_metrics
         if not dry_run:
             report['run_results'], unavailable_metrics = graph.run(data_map)
             report['metrics_missing_input'].update(unavailable_metrics)
-        stop_time = time.perf_counter()
+        stop_time = time.clock()
         report['meta_data']['elapsed'] = stop_time - start_time
 
         if save_graph_path:

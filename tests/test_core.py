@@ -1,3 +1,12 @@
+# Copyright (C) 2018 Swift Navigation Inc.
+# Contact: Swift Navigation <dev@swiftnav.com>
+#
+# This source is subject to the license found in the file 'LICENSE' which must
+# be be distributed together with this source. All other rights reserved.
+#
+# THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND,
+# EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
 
 from okcompute import Field, App
 import pytest
@@ -404,7 +413,7 @@ def cascade_app_setup():
 def test_cascade(cascade_app_setup): # pylint: disable=redefined-outer-name
     data_map = {'input': {}, 'internal':{}, 'output': {}}
     app = cascade_app_setup.app
-    cascade_app_setup.fail_node_list.clear()
+    del cascade_app_setup.fail_node_list[:]
     IN1.set_by_path(data_map, 'a')
     IN2.set_by_path(data_map, 'b')
     IN3.set_by_path(data_map, 'c')
@@ -415,7 +424,7 @@ def test_cascade(cascade_app_setup): # pylint: disable=redefined-outer-name
     assert len(report['unneeded_metrics']) == 0
     assert len(report['metrics_missing_input']) == 0
     assert len(report['run_results']) == 5
-    for node in [ f'node{i}' for i in range(1, 6)]:
+    for node in [ 'node' + str(i) for i in range(1, 6)]:
         assert report['run_results'][node]['result'] == 'Success'
     assert data_map['internal'] == {'int3': "node3[c, d]0",
                                       'int2': "node2[b]0",
@@ -447,7 +456,7 @@ def test_cascade_error(cascade_app_setup): # pylint: disable=redefined-outer-nam
         }
     }
     assert len(report['run_results']) == 4
-    for node in [ f'node{i}' for i in [2,3,5] ]:
+    for node in [ 'node' + str(i) for i in [2,3,5] ]:
         assert report['run_results'][node]['result'] == 'Success'
     assert data_map['internal'] == {'int3': "node3[c, d]0",
                                       'int2': "node2[b]0"
@@ -458,7 +467,7 @@ def test_cascade_error(cascade_app_setup): # pylint: disable=redefined-outer-nam
 def test_default_cascade(cascade_app_setup): # pylint: disable=redefined-outer-name
     data_map = {'input': {}, 'internal':{}, 'output': {}}
     app = cascade_app_setup.app
-    cascade_app_setup.fail_node_list.clear()
+    del cascade_app_setup.fail_node_list[:]
     IN1.set_by_path(data_map, 'a')
     IN2.set_by_path(data_map, 'b')
     IN3.set_by_path(data_map, 'c')
@@ -473,7 +482,7 @@ def test_default_cascade(cascade_app_setup): # pylint: disable=redefined-outer-n
         }
     }
     assert len(report['run_results']) == 5
-    for node in [ f'node{i}' for i in range(1, 6)]:
+    for node in [ 'node' + str(i) for i in range(1, 6)]:
         assert report['run_results'][node]['result'] == 'Success'
     assert data_map['internal'] == {'int3': "node3 default0",
                                       'int2': "node2[b]0",

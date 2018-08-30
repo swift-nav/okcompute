@@ -16,3 +16,9 @@ See [OKCompute Documentation](http://okcompute.swiftnav.com/) for details.
 
 ## TODO
  * Make generated documentation prettier
+ * Better hashing of fields / metrics (avoid collisions based on string names)
+ * Add way of specifying a list fields with name determined by data (thread names) with sub keys
+ * Make helper functions to reduce boiler plate in saving / resuming from intermediary processing
+ * Make reports returned by prune functions more consistent
+ * Standardize config/input/output conventions
+ * Should allow metric input/output be dicts?

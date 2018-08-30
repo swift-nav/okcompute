@@ -1,3 +1,13 @@
+# Copyright (C) 2018 Swift Navigation Inc.
+# Contact: Swift Navigation <dev@swiftnav.com>
+#
+# This source is subject to the license found in the file 'LICENSE' which must
+# be be distributed together with this source. All other rights reserved.
+#
+# THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND,
+# EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
+
 from okcompute import Field, App
 import pytest
 import pandas as pd
@@ -42,7 +52,7 @@ def test_subfield_missmatch():
             input_fields=[[IN1, IN_CONF]],
             output_fields=[OUT1]
         )
-        def test_subfield_missmatch(df):
+        def test_subfield_missmatch1(df):
             return df
 
     dummy_set = App('dummy_set', '', '1.0')
@@ -207,7 +217,7 @@ def test_cascade(cascade_app_setup): # pylint: disable=redefined-outer-name
     data_map = {'input': {}, 'internal': pd.DataFrame(),
                   'output': pd.DataFrame()}
     app = cascade_app_setup.app
-    cascade_app_setup.fail_node_list.clear()
+    del cascade_app_setup.fail_node_list[:]
     data_map['input']['data'] = DUMMY_DATAFRAME
     report = app.run(data_map, desired_output_fields=[
         OUT1, OUT2, OUT3])
@@ -215,7 +225,7 @@ def test_cascade(cascade_app_setup): # pylint: disable=redefined-outer-name
     assert len(report['unneeded_metrics']) == 0
     assert len(report['metrics_missing_input']) == 0
     assert len(report['run_results']) == 5
-    for node in [f'node{i}' for i in range(1, 6)]:
+    for node in ['node' + str(i) for i in range(1, 6)]:
         assert report['run_results'][node]['result'] == 'Success'
     assert data_map['internal'].to_dict() == {'int3': {0: 57},
                                                 'int2': {0: 15},
@@ -232,7 +242,7 @@ def test_cascade_error(cascade_app_setup): # pylint: disable=redefined-outer-nam
                   'output': pd.DataFrame()}
     app = cascade_app_setup.app
     fail_nodes = cascade_app_setup.fail_node_list
-    fail_nodes.clear()
+    del fail_nodes[:]
     data_map['input']['data'] = DUMMY_DATAFRAME
     fail_nodes.append('node1')
     report = app.run(data_map, desired_output_fields=[
@@ -246,7 +256,7 @@ def test_cascade_error(cascade_app_setup): # pylint: disable=redefined-outer-nam
                                                 }
                                                }
     assert len(report['run_results']) == 4
-    for node in [f'node{i}' for i in [2, 3, 5]]:
+    for node in ['node' + str(i) for i in [2, 3, 5]]:
         assert report['run_results'][node]['result'] == 'Success'
     assert data_map['internal'].to_dict() == {'int3': {0: 57},
                                                 'int2': {0: 15}
@@ -259,7 +269,7 @@ def test_default_cascade(cascade_app_setup): # pylint: disable=redefined-outer-n
     data_map = {'input': {}, 'internal': pd.DataFrame(),
                   'output': pd.DataFrame()}
     app = cascade_app_setup.app
-    cascade_app_setup.fail_node_list.clear()
+    del cascade_app_setup.fail_node_list[:]
     data_map['input']['data'] = DUMMY_DATAFRAME[[
         IN1.key[-1], IN2.key[-1], IN3.key[-1]]]
     report = app.run(data_map, desired_output_fields=[
@@ -273,7 +283,7 @@ def test_default_cascade(cascade_app_setup): # pylint: disable=redefined-outer-n
                                                 }
                                                }
     assert len(report['run_results']) == 5
-    for node in [f'node{i}' for i in range(1, 6)]:
+    for node in ['node' + str(i) for i in range(1, 6)]:
         assert report['run_results'][node]['result'] == 'Success'
     assert data_map['internal'].to_dict() == {'int3': {0: 1000},
                                                 'int2': {0: 15},
