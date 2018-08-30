@@ -11,6 +11,7 @@
 
 import io
 from setuptools import setup, find_packages
+from collections import OrderedDict
 
 main_ns = {}
 exec(open('okcompute/version.py').read(), main_ns)  # pylint: disable=exec-used
@@ -23,8 +24,11 @@ setup(
     long_description=io.open('README.md', encoding='utf-8').read(),
     long_description_content_type='text/markdown',
     url='https://github.com/swift-nav/okcompute',
-    # use_scm_version=True,
-    # setup_requires=['setuptools_scm'],
+    project_urls=OrderedDict((
+        ('Documentation', 'http://okcompute.swiftnav.com/'),
+        ('Code', 'https://github.com/swift-nav/okcompute'),
+        ('Issue tracker', 'https://github.com/swift-nav/okcompute/issues'),
+    )),
     install_requires=[
         'networkx',
     ],
@@ -37,9 +41,15 @@ setup(
         'appdoc': ['pygraphviz', 'jinja2'],
         'doc': ['sphinx'],
     },
+    license='GNU Lesser General Public License 3',
     classifiers=[
+        'Development Status :: 4 - Beta',
+        'Intended Audience :: Developers',
         'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.6',
+        'Topic :: Software Development',
     ],
 )
