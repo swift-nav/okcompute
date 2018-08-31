@@ -19,6 +19,10 @@ exec(open('okcompute/version.py').read(), main_ns)  # pylint: disable=exec-used
 setup(
     name='okcompute',
     version=main_ns['__version__'],
+    author='Swift Navigation',
+    author_email='dev@swiftnav.com',
+    maintainer='Swift Navigation',
+    maintainer_email='dev@swiftnav.com',
     packages=find_packages(exclude=['tests*']),
     description=('Fault tolerant analysis framework.'),
     long_description=io.open('README.md', encoding='utf-8').read(),
@@ -41,7 +45,7 @@ setup(
         'appdoc': ['pygraphviz', 'jinja2'],
         'doc': ['sphinx'],
     },
-    license='GNU Lesser General Public License 3',
+    license='MIT',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',

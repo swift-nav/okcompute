@@ -32,3 +32,4 @@ Key Features
    quickstart
    api
    license
+   changelog
