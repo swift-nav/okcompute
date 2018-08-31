@@ -332,7 +332,7 @@ class Graph:
             for node in nx.topological_sort(self.G):
                 if not isinstance(node, MetricSpec) or node in processed:
                     continue
-                start_time = time.clock()
+                start_time = time.time()
                 result = 'Success'
                 try:
                     if not self.G.nodes[node]['use_input']:
@@ -362,7 +362,7 @@ class Graph:
                         field.set_by_path(data_map, val)
                 except Exception:  # pylint: disable=broad-except
                     result = 'Failure: ' + traceback.format_exc()
-                stop_time = time.clock()
+                stop_time = time.time()
                 run_report[node.name] = {
                     'elapsed': stop_time - start_time,
                     'result': result
@@ -597,7 +597,7 @@ class App:
 
         """
 
-        start_time = time.clock()
+        start_time = time.time()
         self.graph.clear_props()
         report = {
             'meta_data': {
@@ -626,7 +626,7 @@ class App:
         if not dry_run:
             report['run_results'], unavailable_metrics = graph.run(data_map)
             report['metrics_missing_input'].update(unavailable_metrics)
-        stop_time = time.clock()
+        stop_time = time.time()
         report['meta_data']['elapsed'] = stop_time - start_time
 
         if save_graph_path:
