@@ -632,3 +632,6 @@ class App:
         if save_graph_path:
             graph.save_graph(save_graph_path)
         return report
+
+    def __repr__(self):
+        return 'App(name="{}", ver="{}", desc="{}")'.format(self.name, self.version, self.description)
