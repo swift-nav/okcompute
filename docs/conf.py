@@ -29,6 +29,11 @@ version = okcompute.__version__
 # The full version, including alpha/beta/rc tags
 release = version
 
+rst_epilog = """
+.. |ProjectVersion| replace:: Foo Project, version {versionnum}
+""".format(
+versionnum = version,
+)
 
 # -- General configuration ---------------------------------------------------
 

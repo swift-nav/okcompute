@@ -1,4 +1,4 @@
-Welcome to OKCompute
+Welcome to OKCompute |ProjectVersion|
 =====================================
 
 .. toctree::
