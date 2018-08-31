@@ -157,6 +157,9 @@ class Field:
     def __eq__(self, other):
         return self.key_to_str() == other
 
+    def __repr__(self):
+        return 'Field(key="{}", desc="{}")'.format(self.key_to_str(), self.description)
+
 
 class MetricSpec:
     def __init__(self, name, description, func, input_fields, output_fields,
@@ -177,6 +180,9 @@ class MetricSpec:
 
     def __eq__(self, other):
         return self.name == other
+
+    def __repr__(self):
+        return 'MetricSpec(name="{}", desc="{}")'.format(self.name, self.description)
 
 
 class Graph:
