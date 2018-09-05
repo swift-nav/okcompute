@@ -16,3 +16,9 @@ App Class
 
 .. autoclass:: okcompute.App
    :members:
+
+Report Utilities
+----------------
+
+.. automodule:: okcompute.report_utils
+   :members:

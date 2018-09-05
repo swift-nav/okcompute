@@ -60,13 +60,13 @@ Application
 -----------
 
 .. literalinclude:: ../example/example_app.py
-   :lines: 12-15
+   :lines: 22-25
 
 Fields
 ------
 
 .. literalinclude:: ../example/example_app.py
-   :lines: 17-37
+   :lines: 27-47
 
 Nodes
 -----
@@ -95,7 +95,7 @@ Based on the command line arguements a data_map is constructed. This is passed
 into the run function of the example application:
 
 .. literalinclude:: ../example/example_app.py
-   :lines: 155-158
+   :lines: 165-168
 
 The report is a description of what analysis was performed.
 
