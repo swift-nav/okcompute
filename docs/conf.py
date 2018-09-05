@@ -30,7 +30,7 @@ version = okcompute.__version__
 release = version
 
 rst_epilog = """
-.. |ProjectVersion| replace:: Foo Project, version {versionnum}
+.. |ProjectVersion| replace:: {versionnum}
 """.format(
 versionnum = version,
 )
