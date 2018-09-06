@@ -18,14 +18,12 @@ import okcompute
 
 import networkx as nx
 
-import operator
 import sys
 import traceback
 import datetime
 import time
 if sys.version_info > (3, 0):
     from inspect import signature, Parameter  # pylint: disable=no-name-in-module, import-error
-    from functools import reduce  # pylint: disable=redefined-builtin
 else:
     from funcsigs import signature, Parameter  # pylint: disable=no-name-in-module, import-error
 
@@ -76,6 +74,45 @@ class Field:
     def __hash__(self):
         return hash(self.key_to_str())
 
+    @staticmethod
+    def __check_key(key, root):
+        """Get the value from root at the nested key location if possible.
+
+        If the key isn't accesible indicate which layer of the key failed
+
+        Args:
+            key ([str]): The key to get the value for
+            root (dict): The map to get the value from
+
+        Returns:
+                bool: True if value referenced by self.key exists, False otherwise.
+
+                str: if self.key exist return the value stored there. If the
+                    key is missing return a str of the subset of keys that first
+                    were not found. For example:
+
+                    .. code-block:: py
+
+                        self.key = ['a', 'b']
+                        self.path_exists({'a': {'b': 6}})
+
+                    would return (True, 6)
+
+                    .. code-block:: py
+
+                        self.key = ['a', 'b', 'c']
+                        self.path_exists({'a': {}})
+
+                    would return (False, 'a/b')
+        """
+
+        for idx in range(len(key)):
+            try:
+                root = root[key[idx]]
+            except (KeyError, TypeError):
+                return False, FIELD_DIVIDER.join(key[:idx + 1])
+        return True, root
+
     def path_exists(self, root):
         """Try to access a nested object in root by item sequence.
 
@@ -85,11 +122,9 @@ class Field:
         Returns:
             bool: True if value referenced by self.key exists, False otherwise.
         """
-        try:
-            self.get_by_path(root)
-            return True
-        except KeyError:
-            return False
+
+        return Field.__check_key(self.key, root)[0]
+
 
     def get_by_path(self, root):
         """Access the nested object in root at self.key
@@ -103,7 +138,11 @@ class Field:
         Raises:
             KeyError: If the path for self.key isn't in root
         """
-        return reduce(operator.getitem, self.key, root)
+        found, val = Field.__check_key(self.key, root)
+        if found:
+            return val
+        else:
+            raise KeyError('{} was not found when getting field {}'.format(val, self.key_to_str()))
 
     @staticmethod
     def get_field_set(root, fields):
@@ -135,11 +174,14 @@ class Field:
         """
         base_key = fields[0].key[:-1]
         entries = [field.key[-1] for field in fields]
+        found, val = Field.__check_key(base_key, root)
+        if not found:
+            raise KeyError('base key {} was not found'.format(val))
         try:
-            return reduce(operator.getitem, base_key, root)[entries]
+            return val[entries]
         except TypeError:
             raise TypeError(
-                "object in {} is not a DataFrame and can't return a column set".format(base_key))
+                "object in {} is not a DataFrame and can't return a column set".format(FIELD_DIVIDER.join(base_key)))
 
     def set_by_path(self, root, value):
         """Set a value in a nested object in root at self.key
@@ -151,7 +193,9 @@ class Field:
         Raises:
             KeyError: If the path up to self.key isn't in root
         """
-        val = reduce(operator.getitem, self.key[:-1], root)
+        found, val = Field.__check_key(self.key[:-1], root)
+        if not found:
+            raise KeyError('key {} was not found in field {}'.format(val, self.key_to_str()))
         val[self.key[-1]] = value
 
     def __eq__(self, other):
@@ -359,7 +403,10 @@ class Graph:
                     assert len(node.output_fields) == len(
                         retvals), "Metric didn't produce expected number of outputs"
                     for field, val in zip(node.output_fields, retvals):
-                        field.set_by_path(data_map, val)
+                        try:
+                            field.set_by_path(data_map, val)
+                        except KeyError as e:
+                            result = 'Failure: While storing return value, {}.\nCheck that data_map passed into App.run() has a dict at the missing key'.format(str(e))
                 except Exception:  # pylint: disable=broad-except
                     result = 'Failure: ' + traceback.format_exc()
                 stop_time = time.time()
