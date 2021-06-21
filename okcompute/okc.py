@@ -180,7 +180,7 @@ class Field:
         try:
             return val[entries]
         except TypeError:
-            raise TypeError(
+            raise TypeError(  # pylint: disable=bad-option-value,raise-missing-from
                 "object in {} is not a DataFrame and can't return a column set".format(FIELD_DIVIDER.join(base_key)))
 
     def set_by_path(self, root, value):
